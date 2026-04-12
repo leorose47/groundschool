@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Study — GroundSchool</title>
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='28'>✈</text></svg>">
+</head>
+<body>
+
+<!-- ── App Header ── -->
+<header class="app-header">
+  <div class="app-logo">
+    <span class="logo-icon">✈</span>
+    <span>GROUND<strong>SCHOOL</strong></span>
+  </div>
+  <a href="index.html" class="header-home">← Home</a>
+
+  <div class="rating-pills" style="margin-left:1rem">
+    <button class="rpill active" data-rating="PPL">PPL</button>
+    <button class="rpill" data-rating="IFR">IFR</button>
+    <button class="rpill" data-rating="CPL">CPL</button>
+  </div>
+
+  <div class="header-right">
+    <div class="session-stats">
+      <div class="ss-item ss-correct">
+        <div class="ss-n" id="statCorrect">0</div>
+        <div class="ss-l">Correct</div>
+      </div>
+      <div class="ss-item ss-wrong">
+        <div class="ss-n" id="statWrong">0</div>
+        <div class="ss-l">Wrong</div>
+      </div>
+      <div class="ss-item ss-streak">
+        <div class="ss-n" id="statStreak">0</div>
+        <div class="ss-l">Streak</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ── App Body ── -->
+<div class="app-body">
+
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="sb-section">
+      <div class="sb-label">Study Mode</div>
+      <button class="nav-item active" data-mode="ai">
+        <span class="ni-icon">🤖</span> AI Instructor
+      </button>
+      <button class="nav-item" data-mode="quiz">
+        <span class="ni-icon">📝</span> Practice Exam
+      </button>
+      <button class="nav-item" data-mode="flash">
+        <span class="ni-icon">🗂</span> Flashcards
+      </button>
+      <button class="nav-item" data-mode="ref">
+        <span class="ni-icon">📐</span> Quick Reference
+      </button>
+    </div>
+    <div class="sb-section">
+      <div class="sb-label">Filter by Subject</div>
+      <button class="nav-item active" data-subj="all">
+        <span class="ni-icon">🌐</span> All Subjects
+      </button>
+      <button class="nav-item" data-subj="aero">
+        <span class="ni-icon">✈</span> Aerodynamics
+      </button>
+      <button class="nav-item" data-subj="wx">
+        <span class="ni-icon">⛅</span> Weather
+        <span class="ni-count">32</span>
+      </button>
+      <button class="nav-item" data-subj="regs">
+        <span class="ni-icon">📋</span> Regulations
+        <span class="ni-count">41</span>
+      </button>
+      <button class="nav-item" data-subj="nav">
+        <span class="ni-icon">🗺</span> Navigation
+      </button>
+      <button class="nav-item" data-subj="sys">
+        <span class="ni-icon">⚙</span> Aircraft Systems
+      </button>
+      <button class="nav-item" data-subj="perf">
+        <span class="ni-icon">📊</span> Performance
+      </button>
+      <button class="nav-item" data-subj="comm">
+        <span class="ni-icon">📡</span> Comms / ATC
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main Content Area -->
+  <div class="app-main">
+    <!-- Mode Tabs -->
+    <div class="mode-bar">
+      <button class="mode-tab active" data-mode="ai">AI INSTRUCTOR</button>
+      <button class="mode-tab" data-mode="quiz">PRACTICE EXAM</button>
+      <button class="mode-tab" data-mode="flash">FLASHCARDS</button>
+      <button class="mode-tab" data-mode="ref">QUICK REFERENCE</button>
+    </div>
+
+    <!-- Content Panels -->
+    <div class="mode-content">
+
+      <!-- ── AI Instructor ── -->
+      <div class="mode-panel active" id="panel-ai">
+        <div class="panel-title">AI Ground Instructor</div>
+        <div class="panel-sub">Ask any aviation question — the AI will explain it like a CFI teaching you ground school.</div>
+        <div class="chat-wrap">
+          <div class="chat-msgs" id="chatMsgs"></div>
+          <div class="quick-chips">
+            <button class="qchip">What are VFR cloud clearances?</button>
+            <button class="qchip">Explain a stall</button>
+            <button class="qchip">Decode a METAR</button>
+            <button class="qchip">How does a VOR work?</button>
+            <button class="qchip">ILS approach explained</button>
+            <button class="qchip">What causes carburetor ice?</button>
+            <button class="qchip">Airspace classes overview</button>
+            <button class="qchip">Four left-turning tendencies</button>
+          </div>
+          <div class="chat-bar">
+            <textarea
+              class="chat-in"
+              id="chatInput"
+              placeholder="Ask your ground instructor..."
+              rows="1"
+            ></textarea>
+            <button class="send-btn" id="sendBtn">SEND ↑</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Practice Quiz ── -->
+      <div class="mode-panel" id="panel-quiz">
+        <div class="panel-title">Practice Exam</div>
+        <div class="panel-sub">FAA-style multiple choice. 70% is passing on the actual written test.</div>
+        <div id="quizContainer"></div>
+      </div>
+
+      <!-- ── Flashcards ── -->
+      <div class="mode-panel" id="panel-flash">
+        <div class="panel-title">Flashcards</div>
+        <div class="panel-sub">Click the card to reveal the answer. Mark what you know to track your progress.</div>
+
+        <div class="flash-outer" id="flashOuter">
+          <div class="flash-inner" id="flashInner">
+            <div class="flash-face">
+              <div class="flash-hint">CLICK TO FLIP ↕</div>
+              <div class="flash-q" id="flashQ">Loading...</div>
+              <div class="flash-cat" id="flashCat"></div>
+            </div>
+            <div class="flash-face flash-back">
+              <div class="flash-hint">ANSWER</div>
+              <div class="flash-a" id="flashA"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flash-nav">
+          <button class="btn btn-ghost" onclick="flashNav(-1)">← Prev</button>
+          <span class="flash-counter" id="flashCounter">1 / 20</span>
+          <button class="btn btn-ghost" onclick="flashNav(1)">Next →</button>
+        </div>
+
+        <div class="flash-actions">
+          <button class="btn btn-know" onclick="markFlash('know')">✓ Know it</button>
+          <button class="btn btn-review" onclick="markFlash('review')">↺ Review again</button>
+        </div>
+
+        <div class="flash-progress" style="margin-top:1rem">
+          <div class="flash-progress-fill" id="flashProgressFill" style="width:0%"></div>
+        </div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:4px;text-align:right" id="flashKnownLabel">0 cards mastered</div>
+      </div>
+
+      <!-- ── Quick Reference ── -->
+      <div class="mode-panel" id="panel-ref">
+        <div class="panel-title">Quick Reference</div>
+        <div class="panel-sub">Essential limits, minimums, and memory aids. Print or bookmark this page.</div>
+        <div class="ref-grid" id="refGrid"></div>
+      </div>
+
+    </div><!-- /mode-content -->
+  </div><!-- /app-main -->
+</div><!-- /app-body -->
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

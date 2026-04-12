@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="GroundSchool — AI-powered aviation study platform for PPL, IFR, CPL and beyond. Practice exams, flashcards, and an AI instructor.">
+  <meta name="theme-color" content="#080f1e">
+  <title>GroundSchool — Aviation Study Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='28'>✈</text></svg>">
+</head>
+<body>
+
+<!-- ═══════════════════════════════ NAVBAR ═══════════════════════════════════ -->
+<nav class="navbar" id="navbar">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">
+      <span class="logo-icon">✈</span>
+      <span class="logo-text">GROUND<strong>SCHOOL</strong></span>
+    </a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#ratings">Ratings</a>
+      <a href="app.html" class="nav-cta">Open Study App →</a>
+    </div>
+    <button class="nav-burger" id="navBurger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+  <div class="nav-mobile" id="navMobile">
+    <a href="#features">Features</a>
+    <a href="#ratings">Ratings</a>
+    <a href="app.html" class="nav-cta">Open Study App →</a>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════ HERO ══════════════════════════════════════ -->
+<section class="hero">
+  <div class="hero-bg">
+    <canvas id="starfield"></canvas>
+    <div class="horizon-glow"></div>
+    <div class="grid-overlay"></div>
+  </div>
+  <div class="hero-content">
+    <div class="hero-badge">AI-POWERED GROUND SCHOOL</div>
+    <h1 class="hero-title">
+      Clear skies start<br>
+      <span class="hero-accent">on the ground.</span>
+    </h1>
+    <p class="hero-sub">
+      The most complete aviation study platform for student pilots. 
+      AI instructor, 500+ practice questions, flashcards, and quick-reference charts — 
+      all built to get you through your written exams.
+    </p>
+    <div class="hero-actions">
+      <a href="app.html" class="btn-hero-primary">
+        <span>Start Studying Free</span>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a href="#features" class="btn-hero-secondary">See What's Inside</a>
+    </div>
+    <div class="hero-stats">
+      <div class="hstat"><span class="hstat-n">500+</span><span class="hstat-l">Practice Questions</span></div>
+      <div class="hstat-divider"></div>
+      <div class="hstat"><span class="hstat-n">3</span><span class="hstat-l">Ratings Covered</span></div>
+      <div class="hstat-divider"></div>
+      <div class="hstat"><span class="hstat-n">AI</span><span class="hstat-l">Instructor 24/7</span></div>
+    </div>
+  </div>
+  <div class="hero-scroll-hint">
+    <span>scroll</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ FEATURES ═════════════════════════════════ -->
+<section class="features" id="features">
+  <div class="container">
+    <div class="section-label">WHAT'S INSIDE</div>
+    <h2 class="section-title">Everything you need to<br><span>ace your written exam.</span></h2>
+
+    <div class="features-grid">
+      <div class="feat-card feat-card--large">
+        <div class="feat-icon">🤖</div>
+        <h3>AI Ground Instructor</h3>
+        <p>Ask any aviation question and get a detailed, textbook-accurate answer instantly. From VFR cloud clearances to ILS approaches — your personal CFI available 24/7.</p>
+        <div class="feat-topics">
+          <span>Aerodynamics</span><span>Weather</span><span>Regulations</span>
+          <span>Navigation</span><span>Systems</span><span>ATC Comms</span>
+        </div>
+        <a href="app.html" class="feat-link">Ask the AI Instructor →</a>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-icon">📝</div>
+        <h3>Practice Exams</h3>
+        <p>FAA-style multiple choice questions with explanations. Track your score and see exactly where you need to improve.</p>
+        <div class="feat-mini-stat"><span class="fms-n">500+</span> questions across all subjects</div>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-icon">🗂</div>
+        <h3>Flashcards</h3>
+        <p>Flip-card format for rapid-fire memorization of key definitions, limits, and procedures.</p>
+        <div class="feat-mini-stat"><span class="fms-n">100+</span> cards, mark what you know</div>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-icon">📐</div>
+        <h3>Quick Reference</h3>
+        <p>Instant-access tables for airspeed limits, fuel requirements, cloud clearances, transponder codes, and more.</p>
+        <div class="feat-mini-stat">Always available, <span class="fms-n">no scrolling</span></div>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-icon">📊</div>
+        <h3>Session Tracking</h3>
+        <p>See your correct answers, wrong answers, and current streak in real time across all study modes.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ RATINGS ══════════════════════════════════ -->
+<section class="ratings" id="ratings">
+  <div class="container">
+    <div class="section-label">STUDY PATHS</div>
+    <h2 class="section-title">From student pilot to <span>airline captain.</span></h2>
+    <div class="ratings-grid">
+      <div class="rating-card rating-card--ppl">
+        <div class="rating-tag">PPL</div>
+        <h3>Private Pilot</h3>
+        <p>The foundation. Learn aerodynamics, weather, airspace, regulations, navigation, and aircraft systems.</p>
+        <ul>
+          <li>VFR cloud clearances &amp; airspace</li>
+          <li>Weather theory &amp; METAR decoding</li>
+          <li>Flight instruments &amp; systems</li>
+          <li>FAR Part 61 &amp; 91 regulations</li>
+          <li>Pilotage &amp; dead reckoning</li>
+        </ul>
+        <a href="app.html" class="btn-rating">Study PPL →</a>
+      </div>
+      <div class="rating-card rating-card--ifr">
+        <div class="rating-tag">IFR</div>
+        <h3>Instrument Rating</h3>
+        <p>Navigate the clouds. Master approaches, holds, airways, and instrument flying procedures.</p>
+        <ul>
+          <li>ILS, VOR, GPS &amp; RNAV approaches</li>
+          <li>Holding patterns &amp; procedure turns</li>
+          <li>En-route charts &amp; airways</li>
+          <li>Alternate minimums &amp; weather</li>
+          <li>IFR flight planning</li>
+        </ul>
+        <a href="app.html" class="btn-rating">Study IFR →</a>
+      </div>
+      <div class="rating-card rating-card--cpl">
+        <div class="rating-tag">CPL</div>
+        <h3>Commercial Pilot</h3>
+        <p>Fly for hire. Study commercial privileges, Part 135 ops, and advanced aircraft performance.</p>
+        <ul>
+          <li>FAR Part 135 operations</li>
+          <li>Commercial maneuvers &amp; limits</li>
+          <li>Advanced performance &amp; W&amp;B</li>
+          <li>Complex aircraft systems</li>
+          <li>Commercial privileges &amp; limitations</li>
+        </ul>
+        <a href="app.html" class="btn-rating">Study CPL →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ CTA ══════════════════════════════════════ -->
+<section class="cta-section">
+  <div class="cta-bg"></div>
+  <div class="container cta-inner">
+    <div class="cta-runway">
+      <div class="runway-lights">
+        <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <div class="runway-center"></div>
+      <div class="runway-lights">
+        <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+      </div>
+    </div>
+    <h2 class="cta-title">Ready for takeoff?</h2>
+    <p class="cta-sub">Your written exam isn't going to pass itself. Start studying now — it's completely free.</p>
+    <a href="app.html" class="btn-hero-primary btn-cta">
+      <span>Open GroundSchool</span>
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ FOOTER ═══════════════════════════════════ -->
+<footer class="footer">
+  <div class="container footer-inner">
+    <div class="footer-brand">
+      <span class="logo-icon">✈</span>
+      <span class="logo-text">GROUND<strong>SCHOOL</strong></span>
+      <p>AI-powered aviation study. Not a substitute for official FAA publications or a certified flight instructor.</p>
+    </div>
+    <div class="footer-links">
+      <div class="footer-col">
+        <strong>Study</strong>
+        <a href="app.html">AI Instructor</a>
+        <a href="app.html">Practice Exams</a>
+        <a href="app.html">Flashcards</a>
+        <a href="app.html">Quick Reference</a>
+      </div>
+      <div class="footer-col">
+        <strong>Ratings</strong>
+        <a href="app.html">PPL</a>
+        <a href="app.html">Instrument Rating</a>
+        <a href="app.html">Commercial Pilot</a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2025 GroundSchool. For educational use only. Always consult official FAA publications.</span>
+  </div>
+</footer>
+
+<script src="js/landing.js"></script>
+</body>
+</html>
