@@ -1,4 +1,4 @@
-/* Baseline: storefront logic (catalog, quiz, cart, modal) */
+/* Integer: storefront logic (catalog, quiz, cart, modal) */
 (() => {
   "use strict";
 
@@ -214,7 +214,7 @@
         <rect x="14" y="26" width="112" height="4" fill="#000" opacity=".15"/>
         <rect x="18" y="30" width="104" height="114" rx="10" fill="${p.color}"/>
         <rect x="18" y="56" width="104" height="64" fill="#f7f4ec"/>
-        <text x="70" y="72" text-anchor="middle" font-family="Inter,Arial" font-size="7" letter-spacing="1.5" fill="${p.labelInk}" opacity=".7">${p.num} · BASELINE</text>
+        <text x="70" y="72" text-anchor="middle" font-family="Inter,Arial" font-size="7" letter-spacing="1.5" fill="${p.labelInk}" opacity=".7">${p.num} · INTEGER</text>
         <text x="70" y="93" text-anchor="middle" font-family="Fraunces,Georgia,serif" font-size="17" fill="${p.labelInk}">${esc(p.name)}</text>
         <text x="70" y="110" text-anchor="middle" font-family="Inter,Arial" font-size="${p.lbl.length > 15 ? 5.6 : 6.5}" letter-spacing=".6" fill="${p.labelInk}" opacity=".75">${esc(p.lbl)}</text>
         <rect x="18" y="30" width="10" height="114" rx="5" fill="#fff" opacity=".12"/>
@@ -225,7 +225,7 @@
       <rect x="32" y="28" width="36" height="8" fill="#1f2521" opacity=".85"/>
       <rect x="12" y="34" width="76" height="130" rx="16" fill="${p.color}"/>
       <rect x="12" y="68" width="76" height="66" fill="#f7f4ec"/>
-      <text x="50" y="83" text-anchor="middle" font-family="Inter,Arial" font-size="6" letter-spacing="1.4" fill="${p.labelInk}" opacity=".7">${p.num} · BASELINE</text>
+      <text x="50" y="83" text-anchor="middle" font-family="Inter,Arial" font-size="6" letter-spacing="1.4" fill="${p.labelInk}" opacity=".7">${p.num} · INTEGER</text>
       <text x="50" y="103" text-anchor="middle" font-family="Fraunces,Georgia,serif" font-size="${name.length > 9 ? 12 : 14.5}" fill="${p.labelInk}">${esc(p.name)}</text>
       <text x="50" y="121" text-anchor="middle" font-family="Inter,Arial" font-size="${p.lbl.length > 15 ? 4.7 : 5.6}" letter-spacing=".4" fill="${p.labelInk}" opacity=".75">${esc(p.lbl)}</text>
       <rect x="12" y="34" width="9" height="130" rx="4.5" fill="#fff" opacity=".12"/>
@@ -252,8 +252,8 @@
   /* ───────────────────────── Cart state ───────────────────────── */
   // line: { key, type: 'product'|'stack', id, qty, sub, freq }
   let cart = [];
-  try { cart = JSON.parse(localStorage.getItem("baseline-cart") || "[]").filter(l => (l.type === "product" ? P[l.id] : S[l.id])); } catch { cart = []; }
-  const save = () => { try { localStorage.setItem("baseline-cart", JSON.stringify(cart)); } catch {} };
+  try { cart = JSON.parse(localStorage.getItem("integer-cart") || "[]").filter(l => (l.type === "product" ? P[l.id] : S[l.id])); } catch { cart = []; }
+  const save = () => { try { localStorage.setItem("integer-cart", JSON.stringify(cart)); } catch {} };
 
   function linePricing(l) {
     if (l.type === "product") {
@@ -595,7 +595,7 @@
     const add = (id, pts, why) => { (r[id] ||= { score: 0, why: [] }); r[id].score += pts; if (why) r[id].why.push(why); };
 
     // Foundation: everyone's baseline
-    add("foundation", 3 + 3 * w("essentials"), has("essentials") ? "you want to <b>cover nutritional gaps</b>" : "it's the <b>baseline</b> every stack is built on");
+    add("foundation", 3 + 3 * w("essentials"), has("essentials") ? "you want to <b>cover nutritional gaps</b>" : "it's the <b>foundation</b> every stack is built on");
     if (ex.includes("indoors")) add("foundation", 2, "you're <b>mostly indoors</b>, so vitamin D matters more");
     if (diet === "vegan" || diet === "veg") add("foundation", 1, `B12 is hard to get on a <b>${diet === "vegan" ? "vegan" : "vegetarian"}</b> diet`);
     if (age === "40s" || age === "50p") add("foundation", 1, "zinc and D3 needs rise <b>after 40</b>");

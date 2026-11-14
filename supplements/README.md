@@ -1,4 +1,4 @@
-# Baseline: men's supplement storefront
+# Integer: men's supplement storefront
 
 Static site with no build step. Open `index.html` in a browser, or serve the folder:
 

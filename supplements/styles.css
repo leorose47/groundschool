@@ -482,3 +482,9 @@ p { margin: 0; }
   .card-media { aspect-ratio: 16 / 10; }
   .card-media svg { height: 80%; }
 }
+
+/* Name / Latin touches */
+.eyebrow .latin { font-family: var(--serif); font-style: italic; text-transform: none; letter-spacing: 0; font-size: 15px; font-weight: 400; }
+.eyebrow em { font-family: var(--serif); text-transform: none; letter-spacing: 0; font-size: 15px; font-weight: 400; }
+.name-note { margin-top: 6px !important; font-size: 13px !important; }
+.name-note em { font-family: var(--serif); }
