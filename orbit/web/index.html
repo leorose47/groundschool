@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0d12">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Orbit</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<style>
+:root{
+  --bg:#0b0d12; --bg2:#12151d; --card:#171b25; --card2:#1e2330; --line:#2a3040;
+  --text:#eef1f7; --text2:#a6aec0; --text3:#6b7487;
+  --accent:#7c9cff; --accent2:#b18cff; --good:#4fd6a0; --warn:#ffb65c; --bad:#ff6b7d;
+  --radius:18px; --safe-b:env(safe-area-inset-bottom,0px); --safe-t:env(safe-area-inset-top,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--text);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,sans-serif}
+body{overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input,textarea,select{font:inherit;color:var(--text);background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:11px 13px;width:100%;outline:none}
+input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+label{display:block;font-size:12px;color:var(--text2);margin:12px 0 5px}
+
+#app{height:100%;display:flex;flex-direction:column;max-width:560px;margin:0 auto;position:relative}
+.view{flex:1;overflow-y:auto;padding:calc(18px + var(--safe-t)) 16px 110px;display:none}
+.view.active{display:block}
+#view-chat.active{display:flex;flex-direction:column;padding-bottom:0}
+
+/* tab bar */
+.tabs{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + var(--safe-b));width:min(528px,calc(100% - 32px));
+  display:flex;background:rgba(23,27,37,.86);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid var(--line);border-radius:22px;padding:6px;z-index:20}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0;border-radius:16px;color:var(--text3);font-size:11px}
+.tab svg{width:22px;height:22px}
+.tab.active{color:var(--text);background:var(--card2)}
+
+/* home */
+.clock{font-size:64px;font-weight:200;letter-spacing:-2px;line-height:1}
+.date{color:var(--text2);margin-top:6px}
+.greet{font-size:20px;font-weight:600;margin:22px 0 12px}
+.ask{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:6px 6px 6px 16px}
+.ask input{border:0;background:none;padding:10px 0}
+.icon-btn{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;background:var(--card2);flex-shrink:0}
+.icon-btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0b0d12}
+.icon-btn svg{width:20px;height:20px}
+.icon-btn.listening{background:var(--bad);color:#fff;animation:pulse 1.2s infinite}
+@keyframes pulse{50%{opacity:.6}}
+.chips{display:flex;gap:8px;overflow-x:auto;margin:12px -16px 0;padding:0 16px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{white-space:nowrap;padding:8px 13px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--text2);font-size:13px}
+.section{margin-top:26px}
+.section-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.section-h h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);font-weight:600}
+.link{color:var(--accent);font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px 8px}
+.appt{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;color:var(--text2);text-align:center;min-width:0;position:relative}
+.appt .ico{width:58px;height:58px;border-radius:17px;background:var(--card2);border:1px solid var(--line);display:grid;place-items:center;font-size:28px;overflow:hidden}
+.appt .ico img{width:100%;height:100%}
+.appt span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.appt .del{position:absolute;top:-6px;right:4px;width:22px;height:22px;border-radius:50%;background:var(--bad);color:#fff;font-size:14px;line-height:22px;display:none}
+.editing .appt .del{display:block}
+.row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row .grow{flex:1;min-width:0}
+.row .sub{font-size:12px;color:var(--text3)}
+.check{width:22px;height:22px;border-radius:50%;border:2px solid var(--text3);flex-shrink:0}
+.overdue{color:var(--warn)}
+.empty{color:var(--text3);font-size:14px;padding:6px 0}
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px}
+.stat b{display:block;font-size:22px;font-weight:600}
+.stat span{font-size:12px;color:var(--text3)}
+
+/* chat */
+.chat-head{display:flex;align-items:center;gap:10px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.chat-head select{flex:1;padding:9px 12px}
+.msgs{flex:1;overflow-y:auto;padding:14px 0;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:86%;padding:10px 14px;border-radius:18px;white-space:pre-wrap;word-wrap:break-word}
+.msg.user{align-self:flex-end;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0b0d12;border-bottom-right-radius:6px}
+.msg.bot{align-self:flex-start;background:var(--card);border:1px solid var(--line);border-bottom-left-radius:6px}
+.msg.err{align-self:flex-start;background:rgba(255,107,125,.12);border:1px solid rgba(255,107,125,.4);color:#ffc2ca;font-size:13px}
+.msg.sys{align-self:center;color:var(--text3);font-size:12px;background:none;padding:2px}
+.action{align-self:flex-start;display:flex;align-items:center;gap:12px;background:var(--card2);border:1px solid var(--accent);border-radius:16px;padding:10px 12px;max-width:90%}
+.action .ai{font-size:22px}
+.action .grow{flex:1;min-width:0;font-size:13px}
+.action .grow b{display:block;font-size:14px}
+.action a,.btn{display:inline-block;padding:9px 14px;border-radius:12px;background:var(--accent);color:#0b0d12;font-weight:600;text-decoration:none;font-size:14px;text-align:center}
+.btn.ghost{background:var(--card2);color:var(--text);border:1px solid var(--line)}
+.btn.danger{background:transparent;color:var(--bad);border:1px solid rgba(255,107,125,.4)}
+.btn.block{display:block;width:100%;margin-top:14px}
+.typing{align-self:flex-start;color:var(--text3);font-size:13px;padding:4px 6px}
+.composer{display:flex;gap:8px;align-items:flex-end;padding:10px 0 calc(96px + var(--safe-b))}
+.composer textarea{resize:none;max-height:140px;border-radius:16px}
+
+/* bots */
+.bot{display:flex;align-items:center;gap:12px}
+.bot .av{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-weight:700;font-size:15px;background:var(--card2)}
+.pill{font-size:11px;padding:3px 8px;border-radius:999px;background:var(--card2);color:var(--text2)}
+.pill.on{background:rgba(79,214,160,.15);color:var(--good)}
+.note{font-size:12.5px;color:var(--text3);margin-top:10px;line-height:1.5}
+.toggle{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.toggle input{width:auto}
+
+/* sheet */
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:40;display:none}
+.sheet{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:min(560px,100%);max-height:88vh;overflow-y:auto;background:var(--bg2);border:1px solid var(--line);border-bottom:0;border-radius:24px 24px 0 0;padding:20px 16px calc(24px + var(--safe-b));z-index:41;display:none}
+.sheet h3{font-size:18px;margin-bottom:4px}
+.sheet .btns{display:flex;gap:10px;margin-top:18px}
+.sheet .btns>*{flex:1}
+.open .sheet,.open .sheet-bg{display:block}
+.toast{position:fixed;left:50%;transform:translateX(-50%);top:calc(16px + var(--safe-t));background:var(--card2);border:1px solid var(--line);padding:10px 16px;border-radius:14px;z-index:60;font-size:14px;display:none}
+.seg{display:flex;gap:6px;margin-bottom:14px}
+.seg button{flex:1;padding:9px;border-radius:12px;background:var(--card);border:1px solid var(--line);color:var(--text2);font-size:13px}
+.seg button.active{background:var(--card2);color:var(--text);border-color:var(--accent)}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ═════════ HOME ═════════ -->
+  <section class="view active" id="view-home">
+    <div class="clock" id="clock">--:--</div>
+    <div class="date" id="date"></div>
+    <div class="greet" id="greet">Hello</div>
+
+    <form class="ask" id="homeAsk">
+      <input id="homeInput" placeholder="Ask Orbit to do something…" autocomplete="off">
+      <button type="button" class="icon-btn mic" title="Speak"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+      <button class="icon-btn primary" title="Send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    </form>
+    <div class="chips" id="suggest"></div>
+
+    <div class="section">
+      <div class="stat-row">
+        <div class="stat"><b id="stDue">0</b><span>Due today</span></div>
+        <div class="stat"><b id="stNotes">0</b><span>Notes</span></div>
+        <div class="stat"><b id="stBots">0</b><span>Bots</span></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-h"><h2>Up next</h2><button class="link" data-go="life">All</button></div>
+      <div class="card" id="upNext"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-h"><h2>Apps</h2><span><button class="link" id="editApps">Edit</button> · <button class="link" id="addApp">Add</button></span></div>
+      <div class="grid" id="appGrid"></div>
+    </div>
+  </section>
+
+  <!-- ═════════ CHAT ═════════ -->
+  <section class="view" id="view-chat">
+    <div class="chat-head">
+      <select id="botPick"></select>
+      <button class="icon-btn" id="clearChat" title="New conversation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>
+    </div>
+    <div class="msgs" id="msgs"></div>
+    <form class="composer" id="chatForm">
+      <textarea id="chatInput" rows="1" placeholder="Message…"></textarea>
+      <button type="button" class="icon-btn mic" title="Speak"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+      <button class="icon-btn primary" title="Send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button>
+    </form>
+  </section>
+
+  <!-- ═════════ LIFE ═════════ -->
+  <section class="view" id="view-life">
+    <div class="seg" id="lifeSeg">
+      <button class="active" data-seg="rem">Reminders</button>
+      <button data-seg="notes">Notes</button>
+      <button data-seg="contacts">Contacts</button>
+    </div>
+    <div id="lifeBody"></div>
+  </section>
+
+  <!-- ═════════ BOTS ═════════ -->
+  <section class="view" id="view-bots">
+    <div class="section-h"><h2>Connected AI bots</h2><button class="link" id="addBot">+ Connect</button></div>
+    <div class="card" id="botList"></div>
+    <p class="note">Orbit is the dashboard; the bots are the brains. Connect Grok, ChatGPT, Claude, or any OpenAI-compatible service (OpenRouter, Together, Groq, a local Ollama/LM Studio server…). The default bot answers the home bar. Keys stay on this device.</p>
+
+    <div class="section">
+      <div class="section-h"><h2>Settings</h2></div>
+      <div class="card">
+        <div class="toggle"><span>Your name</span><input id="setName" style="max-width:55%" placeholder="Optional"></div>
+        <div class="toggle"><span>Read replies aloud</span><input type="checkbox" id="setSpeak"></div>
+        <div class="toggle"><span>Reminder notifications</span><button class="btn ghost" id="setNotif">Enable</button></div>
+        <div class="toggle" style="border:0"><span>Backup</span><span><button class="btn ghost" id="exportBtn">Export</button> <button class="btn ghost" id="importBtn">Import</button></span></div>
+      </div>
+      <p class="note" id="platformNote"></p>
+    </div>
+  </section>
+
+  <nav class="tabs">
+    <button class="tab active" data-go="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
+    <button class="tab" data-go="chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.6L19.5 10l-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.4z"/><path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/></svg>Assistant</button>
+    <button class="tab" data-go="life"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M8 2v4M16 2v4M8 12l2.5 2.5L16 9"/></svg>Life</button>
+    <button class="tab" data-go="bots"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="8" width="14" height="11" rx="3"/><path d="M12 4v4M9 13h.01M15 13h.01M2 13v2M22 13v2"/></svg>Bots</button>
+  </nav>
+</div>
+
+<div id="sheetWrap"><div class="sheet-bg" id="sheetBg"></div><div class="sheet" id="sheet"></div></div>
+<div class="toast" id="toast"></div>
+<input type="file" id="importFile" accept="application/json" hidden>
+
+<script>
+'use strict';
+/* ════════════════════════════════════════════════════════════════════
+   Storage
+   ════════════════════════════════════════════════════════════════════ */
+const KEY = 'orbit.v1';
+const NATIVE = window.OrbitNative || null;   // injected by the Android launcher shell
+
+const DEFAULT_APPS = [
+  {id:'a1', name:'Phone',    icon:'📞', url:'tel:'},
+  {id:'a2', name:'Messages', icon:'💬', url:'sms:'},
+  {id:'a3', name:'Email',    icon:'✉️', url:'mailto:'},
+  {id:'a4', name:'Maps',     icon:'🗺️', url:'https://www.google.com/maps'},
+  {id:'a5', name:'Calendar', icon:'📅', url:'https://calendar.google.com'},
+  {id:'a6', name:'Spotify',  icon:'🎧', url:'https://open.spotify.com'},
+  {id:'a7', name:'YouTube',  icon:'▶️', url:'https://www.youtube.com'},
+  {id:'a8', name:'WhatsApp', icon:'🟢', url:'https://wa.me/'},
+  {id:'a9', name:'Grok',     icon:'✖️', url:'https://grok.com'},
+  {id:'a10',name:'Uber',     icon:'🚗', url:'https://m.uber.com'},
+  {id:'a11',name:'Weather',  icon:'⛅', url:'https://www.google.com/search?q=weather'},
+  {id:'a12',name:'Banking',  icon:'🏦', url:'https://www.google.com/search?q=my+bank'},
+];
+
+const PROVIDERS = {
+  xai:       {label:'xAI Grok',      base:'https://api.x.ai/v1',        model:'grok-4',            kind:'openai', color:'#e8e8e8'},
+  openai:    {label:'OpenAI',        base:'https://api.openai.com/v1',  model:'gpt-4.1',           kind:'openai', color:'#4fd6a0'},
+  anthropic: {label:'Anthropic Claude', base:'https://api.anthropic.com/v1', model:'claude-sonnet-5-5', kind:'anthropic', color:'#ff9a6b'},
+  custom:    {label:'Custom (OpenAI-compatible)', base:'', model:'', kind:'openai', color:'#b18cff'},
+};
+
+function load(){
+  try{ const s = JSON.parse(localStorage.getItem(KEY)); if(s) return Object.assign(fresh(), s); }catch(e){}
+  return fresh();
+}
+function fresh(){
+  return {name:'', speak:false, apps:DEFAULT_APPS, bots:[], defaultBot:null,
+          reminders:[], notes:[], contacts:[], chat:[]};
+}
+let S = load();
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){ toast('Storage full or blocked'); } }
+const uid = () => Math.random().toString(36).slice(2,10);
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ════════════════════════════════════════════════════════════════════
+   Navigation / UI helpers
+   ════════════════════════════════════════════════════════════════════ */
+function go(view){
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-'+view));
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.go === view));
+  if(view === 'home') renderHome();
+  if(view === 'chat'){ renderChat(); setTimeout(()=>$('#chatInput').focus({preventScroll:true}), 50); }
+  if(view === 'life') renderLife();
+  if(view === 'bots') renderBots();
+}
+document.addEventListener('click', e => { const g = e.target.closest('[data-go]'); if(g) go(g.dataset.go); });
+
+let toastT;
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.style.display='block'; clearTimeout(toastT); toastT=setTimeout(()=>t.style.display='none',2200); }
+
+function openSheet(html, onMount){
+  $('#sheet').innerHTML = html; $('#sheetWrap').classList.add('open');
+  onMount && onMount($('#sheet'));
+}
+function closeSheet(){ $('#sheetWrap').classList.remove('open'); }
+$('#sheetBg').onclick = closeSheet;
+
+function fmtWhen(iso){
+  if(!iso) return 'No time set';
+  const d = new Date(iso); if(isNaN(d)) return iso;
+  const now = new Date(), tom = new Date(); tom.setDate(now.getDate()+1);
+  const t = d.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
+  if(d.toDateString() === now.toDateString()) return 'Today ' + t;
+  if(d.toDateString() === tom.toDateString()) return 'Tomorrow ' + t;
+  return d.toLocaleDateString([], {weekday:'short', month:'short', day:'numeric'}) + ' ' + t;
+}
+function toLocalInput(iso){ if(!iso) return ''; const d=new Date(iso); if(isNaN(d)) return ''; d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,16); }
+
+/* ════════════════════════════════════════════════════════════════════
+   Home
+   ════════════════════════════════════════════════════════════════════ */
+function tick(){
+  const d = new Date();
+  $('#clock').textContent = d.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}).replace(/\s?[AP]M/i,'');
+  $('#date').textContent = d.toLocaleDateString([], {weekday:'long', month:'long', day:'numeric'});
+  const h = d.getHours();
+  $('#greet').textContent = (h<5?'Up late':h<12?'Good morning':h<18?'Good afternoon':'Good evening') + (S.name ? ', '+S.name : '');
+}
+const SUGGESTIONS = ['Plan my day','Remind me to call Mom at 6pm','Text Alex I\'m running late','Directions to the nearest coffee shop','Play some focus music','Note: ideas for the weekend'];
+
+let nativeApps = null;   // [{label, pkg}] from Android
+function renderHome(){
+  tick();
+  $('#suggest').innerHTML = SUGGESTIONS.map(s => `<button class="chip">${esc(s)}</button>`).join('');
+  const open = S.reminders.filter(r => !r.done).sort((a,b) => (a.due||'9').localeCompare(b.due||'9'));
+  const endOfDay = new Date(); endOfDay.setHours(23,59,59);
+  $('#stDue').textContent = open.filter(r => r.due && new Date(r.due) <= endOfDay).length;
+  $('#stNotes').textContent = S.notes.length;
+  $('#stBots').textContent = S.bots.length;
+  $('#upNext').innerHTML = open.length ? open.slice(0,4).map(remRow).join('') : '<div class="empty">Nothing scheduled. Ask Orbit to remind you of something.</div>';
+
+  let tiles = S.apps.map(a => `<div class="appt" data-app="${a.id}"><button class="del" data-del="${a.id}">×</button><div class="ico">${esc(a.icon)}</div><span>${esc(a.name)}</span></div>`);
+  if(nativeApps) tiles = tiles.concat(nativeApps.map(a => `<div class="appt" data-pkg="${esc(a.pkg)}"><div class="ico"><img loading="lazy" alt="" data-icon="${esc(a.pkg)}"></div><span>${esc(a.label)}</span></div>`));
+  $('#appGrid').innerHTML = tiles.join('');
+  if(NATIVE && NATIVE.appIcon) document.querySelectorAll('img[data-icon]').forEach(img => {
+    try{ img.src = 'data:image/png;base64,' + NATIVE.appIcon(img.dataset.icon); }catch(e){}
+  });
+}
+function remRow(r){
+  const over = r.due && new Date(r.due) < new Date();
+  return `<div class="row"><button class="check" data-done="${r.id}" title="Complete"></button><div class="grow"><div>${esc(r.text)}</div><div class="sub ${over?'overdue':''}">${esc(fmtWhen(r.due))}</div></div></div>`;
+}
+$('#suggest').addEventListener('click', e => { const c = e.target.closest('.chip'); if(c){ go('chat'); send(c.textContent); }});
+$('#homeAsk').onsubmit = e => { e.preventDefault(); const v=$('#homeInput').value.trim(); if(!v) return; $('#homeInput').value=''; go('chat'); send(v); };
+document.addEventListener('click', e => {
+  const d = e.target.closest('[data-done]');
+  if(d){ const r = S.reminders.find(x => x.id === d.dataset.done); if(r){ r.done = true; save(); toast('Done ✓'); renderHome(); if($('#view-life').classList.contains('active')) renderLife(); } }
+});
+$('#appGrid').addEventListener('click', e => {
+  const del = e.target.closest('[data-del]');
+  if(del){ S.apps = S.apps.filter(a => a.id !== del.dataset.del); save(); renderHome(); return; }
+  if($('#appGrid').classList.contains('editing')){ const t = e.target.closest('[data-app]'); if(t) appSheet(S.apps.find(a=>a.id===t.dataset.app)); return; }
+  const t = e.target.closest('[data-app]'); if(t){ launchUrl(S.apps.find(a=>a.id===t.dataset.app).url); return; }
+  const n = e.target.closest('[data-pkg]'); if(n && NATIVE) NATIVE.launchApp(n.dataset.pkg);
+});
+$('#editApps').onclick = () => { const g=$('#appGrid'); g.classList.toggle('editing'); $('#editApps').textContent = g.classList.contains('editing') ? 'Done' : 'Edit'; };
+$('#addApp').onclick = () => appSheet(null);
+function appSheet(app){
+  const a = app || {name:'', icon:'⭐', url:'https://'};
+  openSheet(`<h3>${app?'Edit':'Add'} app shortcut</h3>
+    <p class="note">Any link works: a website, or an app deep link like <code>spotify:</code>, <code>whatsapp://</code>, <code>tel:</code>, <code>sms:</code>.</p>
+    <label>Name</label><input id="apName" value="${esc(a.name)}">
+    <label>Icon (emoji)</label><input id="apIcon" value="${esc(a.icon)}" maxlength="4">
+    <label>Link</label><input id="apUrl" value="${esc(a.url)}">
+    <div class="btns"><button class="btn ghost" id="apCancel">Cancel</button><button class="btn" id="apSave">Save</button></div>`, s => {
+      s.querySelector('#apCancel').onclick = closeSheet;
+      s.querySelector('#apSave').onclick = () => {
+        const v = {name:$('#apName').value.trim(), icon:$('#apIcon').value.trim()||'⭐', url:$('#apUrl').value.trim()};
+        if(!v.name || !v.url) return toast('Name and link required');
+        if(app) Object.assign(app, v); else S.apps.push({id:uid(), ...v});
+        save(); closeSheet(); renderHome();
+      };
+  });
+}
+function launchUrl(url){
+  if(!url) return;
+  if(/^https?:/i.test(url)) window.open(url, '_blank', 'noopener');
+  else location.href = url;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   Life: reminders, notes, contacts
+   ════════════════════════════════════════════════════════════════════ */
+let lifeSeg = 'rem';
+$('#lifeSeg').onclick = e => { const b=e.target.closest('button'); if(!b) return; lifeSeg=b.dataset.seg; document.querySelectorAll('#lifeSeg button').forEach(x=>x.classList.toggle('active',x===b)); renderLife(); };
+function renderLife(){
+  const el = $('#lifeBody');
+  if(lifeSeg === 'rem'){
+    const open = S.reminders.filter(r=>!r.done).sort((a,b)=>(a.due||'9').localeCompare(b.due||'9'));
+    const done = S.reminders.filter(r=>r.done).slice(-10).reverse();
+    el.innerHTML = `<div class="card">${open.length?open.map(remRow).join(''):'<div class="empty">No open reminders.</div>'}</div>
+      <button class="btn block" id="newRem">+ New reminder</button>
+      ${done.length?`<div class="section"><div class="section-h"><h2>Completed</h2><button class="link" id="clearDone">Clear</button></div><div class="card">${done.map(r=>`<div class="row"><div class="grow" style="text-decoration:line-through;color:var(--text3)">${esc(r.text)}</div></div>`).join('')}</div></div>`:''}`;
+    $('#newRem').onclick = () => openSheet(`<h3>New reminder</h3><label>What</label><input id="rText"><label>When</label><input id="rDue" type="datetime-local">
+      <div class="btns"><button class="btn ghost" onclick="closeSheet()">Cancel</button><button class="btn" id="rSave">Save</button></div>`, s => {
+        s.querySelector('#rSave').onclick = () => { const t=$('#rText').value.trim(); if(!t) return; const d=$('#rDue').value; tools.add_reminder({text:t, due:d?new Date(d).toISOString():''}); closeSheet(); renderLife(); };
+      });
+    const cd = $('#clearDone'); if(cd) cd.onclick = () => { S.reminders = S.reminders.filter(r=>!r.done); save(); renderLife(); };
+  } else if(lifeSeg === 'notes'){
+    el.innerHTML = `<form class="ask" id="noteForm"><input id="noteIn" placeholder="Quick note…"><button class="icon-btn primary">+</button></form>
+      <div class="card section">${S.notes.length?S.notes.slice().reverse().map(n=>`<div class="row"><div class="grow"><div style="white-space:pre-wrap">${esc(n.text)}</div><div class="sub">${esc(fmtWhen(n.at))}</div></div><button class="link" data-delnote="${n.id}">Delete</button></div>`).join(''):'<div class="empty">No notes yet.</div>'}</div>`;
+    $('#noteForm').onsubmit = e => { e.preventDefault(); const t=$('#noteIn').value.trim(); if(t){ tools.add_note({text:t}); renderLife(); } };
+    el.querySelectorAll('[data-delnote]').forEach(b => b.onclick = () => { S.notes = S.notes.filter(n=>n.id!==b.dataset.delnote); save(); renderLife(); });
+  } else {
+    const canPick = 'contacts' in navigator && 'ContactsManager' in window;
+    el.innerHTML = `<p class="note" style="margin:0 0 12px">The assistant uses these to resolve “text Mom” or “email Sam”.</p>
+      <div class="card">${S.contacts.length?S.contacts.map(c=>`<div class="row"><div class="grow"><div>${esc(c.name)}</div><div class="sub">${esc([c.phone,c.email].filter(Boolean).join(' · '))}</div></div><button class="link" data-delc="${c.id}">Remove</button></div>`).join(''):'<div class="empty">No contacts yet.</div>'}</div>
+      <div class="btns" style="display:flex;gap:10px;margin-top:14px">${canPick?'<button class="btn ghost" id="pickC" style="flex:1">Import from phone</button>':''}<button class="btn" id="addC" style="flex:1">+ Add contact</button></div>`;
+    el.querySelectorAll('[data-delc]').forEach(b => b.onclick = () => { S.contacts = S.contacts.filter(c=>c.id!==b.dataset.delc); save(); renderLife(); });
+    $('#addC').onclick = () => openSheet(`<h3>Add contact</h3><label>Name / nickname</label><input id="cName" placeholder="Mom"><label>Phone</label><input id="cPhone" type="tel"><label>Email</label><input id="cEmail" type="email">
+      <div class="btns"><button class="btn ghost" onclick="closeSheet()">Cancel</button><button class="btn" id="cSave">Save</button></div>`, s => {
+        s.querySelector('#cSave').onclick = () => { const n=$('#cName').value.trim(); if(!n) return; S.contacts.push({id:uid(), name:n, phone:$('#cPhone').value.trim(), email:$('#cEmail').value.trim()}); save(); closeSheet(); renderLife(); };
+      });
+    const p = $('#pickC'); if(p) p.onclick = async () => {
+      try{
+        const list = await navigator.contacts.select(['name','tel','email'], {multiple:true});
+        list.forEach(c => S.contacts.push({id:uid(), name:(c.name||[])[0]||'Unknown', phone:(c.tel||[])[0]||'', email:(c.email||[])[0]||''}));
+        save(); renderLife(); toast(`Imported ${list.length}`);
+      }catch(e){ toast('Import cancelled'); }
+    };
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   Tools the AI can use
+   - "internal" tools run instantly and return data.
+   - "external" tools (calls, texts, opening apps) produce a tap-to-run
+     action card: the user stays in control, and browsers require a tap
+     before handing off to another app anyway.
+   ════════════════════════════════════════════════════════════════════ */
+const TOOL_DEFS = [
+  {name:'open_app', description:"Open one of the user's apps by name (from the app list in the system prompt).", parameters:{type:'object', properties:{name:{type:'string'}}, required:['name']}},
+  {name:'call', description:'Start a phone call. `to` may be a phone number or a contact name.', parameters:{type:'object', properties:{to:{type:'string'}}, required:['to']}},
+  {name:'send_text', description:'Prepare an SMS. `to` may be a phone number or a contact name.', parameters:{type:'object', properties:{to:{type:'string'}, body:{type:'string'}}, required:['to','body']}},
+  {name:'send_email', description:'Prepare an email draft. `to` may be an address or a contact name.', parameters:{type:'object', properties:{to:{type:'string'}, subject:{type:'string'}, body:{type:'string'}}, required:['to','subject','body']}},
+  {name:'navigate', description:'Get directions to a place or address in the maps app.', parameters:{type:'object', properties:{destination:{type:'string'}}, required:['destination']}},
+  {name:'open_url', description:'Open a website or app deep link, e.g. a search results page or a Spotify search.', parameters:{type:'object', properties:{url:{type:'string'}, label:{type:'string', description:'Short button label'}}, required:['url']}},
+  {name:'add_reminder', description:'Create a reminder. `due` is an ISO-8601 date-time in the user\'s local time, or empty if no time.', parameters:{type:'object', properties:{text:{type:'string'}, due:{type:'string'}}, required:['text']}},
+  {name:'list_reminders', description:'List open reminders.', parameters:{type:'object', properties:{}}},
+  {name:'complete_reminder', description:'Mark a reminder as done by id.', parameters:{type:'object', properties:{id:{type:'string'}}, required:['id']}},
+  {name:'add_note', description:'Save a note.', parameters:{type:'object', properties:{text:{type:'string'}}, required:['text']}},
+  {name:'search_notes', description:'Search saved notes. Empty query returns the latest notes.', parameters:{type:'object', properties:{query:{type:'string'}}}},
+  {name:'find_contact', description:'Look up a contact by name.', parameters:{type:'object', properties:{name:{type:'string'}}, required:['name']}},
+];
+
+function resolveContact(to, field){
+  if(!to) return {value:'', name:''};
+  const looksRaw = field === 'email' ? /@/.test(to) : /^[+\d][\d\s().-]{4,}$/.test(to);
+  if(looksRaw) return {value:to.replace(field==='email'?/\s/g:/[^\d+]/g,''), name:to};
+  const q = to.toLowerCase();
+  const c = S.contacts.find(c => c.name.toLowerCase() === q) || S.contacts.find(c => c.name.toLowerCase().includes(q) || q.includes(c.name.toLowerCase()));
+  if(c && c[field]) return {value:field==='phone' ? c.phone.replace(/[^\d+]/g,'') : c[field], name:c.name};
+  return {value:'', name:to};
+}
+function findApp(name){
+  const q = (name||'').toLowerCase();
+  if(nativeApps){ const n = nativeApps.find(a => a.label.toLowerCase() === q) || nativeApps.find(a => a.label.toLowerCase().includes(q)); if(n) return {native:n}; }
+  const a = S.apps.find(a => a.name.toLowerCase() === q) || S.apps.find(a => a.name.toLowerCase().includes(q) || q.includes(a.name.toLowerCase()));
+  return a ? {app:a} : null;
+}
+
+let pendingActions = [];   // action cards produced during the current turn
+function action(icon, title, detail, href, pkg){
+  const a = {icon, title, detail, href, pkg}; pendingActions.push(a);
+  return {status:'ready', note:'A button was shown to the user; they tap it to complete this. Do not claim it is already done.'};
+}
+
+const tools = {
+  open_app({name}){
+    const f = findApp(name);
+    if(!f) return {error:`No app named "${name}". Available: ${appNames().join(', ')}`};
+    if(f.native) return action('📱', 'Open '+f.native.label, '', '', f.native.pkg);
+    return action(f.app.icon, 'Open '+f.app.name, '', f.app.url);
+  },
+  call({to}){
+    const r = resolveContact(to, 'phone');
+    if(!r.value) return {error:`No phone number for "${to}". Ask the user for the number or to add the contact.`};
+    return action('📞', 'Call '+r.name, r.value, 'tel:'+r.value);
+  },
+  send_text({to, body}){
+    const r = resolveContact(to, 'phone');
+    if(!r.value) return {error:`No phone number for "${to}".`};
+    return action('💬', 'Text '+r.name, body, `sms:${r.value}?&body=${encodeURIComponent(body||'')}`);
+  },
+  send_email({to, subject, body}){
+    const r = resolveContact(to, 'email');
+    if(!r.value) return {error:`No email for "${to}".`};
+    return action('✉️', 'Email '+r.name, subject, `mailto:${r.value}?subject=${encodeURIComponent(subject||'')}&body=${encodeURIComponent(body||'')}`);
+  },
+  navigate({destination}){
+    return action('🧭', 'Directions', destination, 'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(destination));
+  },
+  open_url({url, label}){
+    if(/^\s*javascript:/i.test(url)) return {error:'Not allowed'};
+    return action('🔗', label || 'Open link', url.length>60?url.slice(0,60)+'…':url, url);
+  },
+  add_reminder({text, due}){
+    let iso = '';
+    if(due){ const d = new Date(due); if(!isNaN(d)) iso = d.toISOString(); }
+    const r = {id:uid(), text, due:iso, done:false, notified:false};
+    S.reminders.push(r); save(); renderHome();
+    return {ok:true, id:r.id, due:iso ? fmtWhen(iso) : 'no time'};
+  },
+  list_reminders(){ return S.reminders.filter(r=>!r.done).map(r=>({id:r.id, text:r.text, due:r.due?fmtWhen(r.due):null})); },
+  complete_reminder({id}){ const r=S.reminders.find(x=>x.id===id); if(!r) return {error:'not found'}; r.done=true; save(); renderHome(); return {ok:true}; },
+  add_note({text}){ S.notes.push({id:uid(), text, at:new Date().toISOString()}); save(); renderHome(); return {ok:true}; },
+  search_notes({query}){
+    const q=(query||'').toLowerCase();
+    return S.notes.filter(n=>!q||n.text.toLowerCase().includes(q)).slice(-15).map(n=>({text:n.text, saved:fmtWhen(n.at)}));
+  },
+  find_contact({name}){ const q=(name||'').toLowerCase(); return S.contacts.filter(c=>c.name.toLowerCase().includes(q)).map(({name,phone,email})=>({name,phone,email})); },
+};
+const appNames = () => S.apps.map(a=>a.name).concat(nativeApps ? nativeApps.map(a=>a.label) : []);
+
+function systemPrompt(){
+  const now = new Date();
+  const off = -now.getTimezoneOffset(), sign = off>=0?'+':'-', oh = String(Math.floor(Math.abs(off)/60)).padStart(2,'0'), om = String(Math.abs(off)%60).padStart(2,'0');
+  return `You are Orbit, a personal assistant that runs the user's phone for them. Be brief, warm, and action-oriented: when the user asks you to do something, use a tool rather than explaining how.
+Current local time: ${now.toLocaleString([], {dateStyle:'full', timeStyle:'short'})} (UTC${sign}${oh}:${om}). When creating reminders, give "due" as ISO-8601 with that offset.
+${S.name ? 'User name: '+S.name : ''}
+Apps on this phone: ${appNames().join(', ')}.
+Contacts: ${S.contacts.map(c=>c.name).join(', ') || 'none saved'}.
+Open reminders: ${S.reminders.filter(r=>!r.done).length}.
+Rules: calls, texts, emails, app launches and links appear as buttons the user taps to confirm, so say e.g. "Tap to send" rather than "Sent". For music/video, prefer open_url with a search link (e.g. https://open.spotify.com/search/QUERY or https://www.youtube.com/results?search_query=QUERY). Never invent phone numbers or email addresses.`;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   Bot adapters — internal history uses OpenAI chat format
+   ════════════════════════════════════════════════════════════════════ */
+async function callOpenAI(bot, messages){
+  const res = await fetch(bot.base.replace(/\/$/,'') + '/chat/completions', {
+    method:'POST',
+    headers:{'Content-Type':'application/json', ...(bot.key ? {'Authorization':'Bearer '+bot.key} : {})},
+    body: JSON.stringify({model:bot.model, messages:[{role:'system', content:systemPrompt()}, ...messages],
+      tools: TOOL_DEFS.map(t => ({type:'function', function:t}))}),
+  });
+  const j = await res.json().catch(()=>({}));
+  if(!res.ok) throw new Error((j.error && (j.error.message || j.error)) || `HTTP ${res.status}`);
+  const m = j.choices[0].message;
+  return {role:'assistant', content:m.content || '', ...(m.tool_calls && m.tool_calls.length ? {tool_calls:m.tool_calls} : {})};
+}
+
+async function callAnthropic(bot, messages){
+  const out = [];
+  for(const m of messages){
+    if(m.role === 'user') out.push({role:'user', content:m.content});
+    else if(m.role === 'assistant'){
+      const blocks = [];
+      if(m.content) blocks.push({type:'text', text:m.content});
+      (m.tool_calls||[]).forEach(tc => blocks.push({type:'tool_use', id:tc.id, name:tc.function.name, input:safeJSON(tc.function.arguments)}));
+      out.push({role:'assistant', content:blocks.length ? blocks : [{type:'text', text:'…'}]});
+    } else if(m.role === 'tool'){
+      const block = {type:'tool_result', tool_use_id:m.tool_call_id, content:m.content};
+      const last = out[out.length-1];
+      if(last && last.role === 'user' && Array.isArray(last.content) && last.content[0]?.type === 'tool_result') last.content.push(block);
+      else out.push({role:'user', content:[block]});
+    }
+  }
+  const res = await fetch(bot.base.replace(/\/$/,'') + '/messages', {
+    method:'POST',
+    headers:{'Content-Type':'application/json', 'x-api-key':bot.key, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true'},
+    body: JSON.stringify({model:bot.model, max_tokens:1024, system:systemPrompt(), messages:out,
+      tools: TOOL_DEFS.map(t => ({name:t.name, description:t.description, input_schema:t.parameters}))}),
+  });
+  const j = await res.json().catch(()=>({}));
+  if(!res.ok) throw new Error((j.error && j.error.message) || `HTTP ${res.status}`);
+  const text = j.content.filter(b=>b.type==='text').map(b=>b.text).join('\n');
+  const calls = j.content.filter(b=>b.type==='tool_use').map(b => ({id:b.id, type:'function', function:{name:b.name, arguments:JSON.stringify(b.input||{})}}));
+  return {role:'assistant', content:text, ...(calls.length ? {tool_calls:calls} : {})};
+}
+function safeJSON(s){ try{ return typeof s === 'string' ? JSON.parse(s || '{}') : (s || {}); }catch(e){ return {}; } }
+const callBot = (bot, msgs) => (PROVIDERS[bot.provider]?.kind === 'anthropic' ? callAnthropic : callOpenAI)(bot, msgs);
+
+/* ════════════════════════════════════════════════════════════════════
+   Chat
+   ════════════════════════════════════════════════════════════════════ */
+let busy = false;
+function activeBot(){ const id = $('#botPick').value || S.defaultBot; return S.bots.find(b=>b.id===id) || S.bots[0]; }
+
+function renderChat(){
+  const pick = $('#botPick');
+  pick.innerHTML = S.bots.length ? S.bots.map(b => `<option value="${b.id}" ${b.id===(pick.dataset.sel||S.defaultBot)?'selected':''}>${esc(b.name)} · ${esc(b.model)}</option>`).join('') : '<option value="">No bot connected</option>';
+  const el = $('#msgs');
+  let html = '';
+  if(!S.chat.length) html += `<div class="msg sys">${S.bots.length ? 'Ask me to call, text, remind, navigate, play, note…' : 'Connect a bot in the Bots tab to get started.'}</div>`;
+  for(const m of S.chat){
+    if(m.role === 'user') html += `<div class="msg user">${esc(m.content)}</div>`;
+    else if(m.role === 'assistant' && m.content) html += `<div class="msg bot">${esc(m.content)}</div>`;
+    if(m.actions) html += m.actions.map(actionCard).join('');
+    if(m.error) html += `<div class="msg err">${esc(m.error)}</div>`;
+  }
+  if(busy) html += '<div class="typing">Thinking…</div>';
+  el.innerHTML = html;
+  el.scrollTop = el.scrollHeight;
+}
+function actionCard(a){
+  const btn = a.pkg ? `<a href="#" data-launch="${esc(a.pkg)}">Open</a>` : `<a href="${esc(a.href)}" ${/^https?:/i.test(a.href)?'target="_blank" rel="noopener"':''}>${/^tel:/.test(a.href)?'Call':/^(sms|mailto):/.test(a.href)?'Send':'Open'}</a>`;
+  return `<div class="action"><div class="ai">${esc(a.icon)}</div><div class="grow"><b>${esc(a.title)}</b>${esc(a.detail||'')}</div>${btn}</div>`;
+}
+$('#msgs').addEventListener('click', e => { const l = e.target.closest('[data-launch]'); if(l){ e.preventDefault(); NATIVE && NATIVE.launchApp(l.dataset.launch); }});
+$('#botPick').onchange = e => { $('#botPick').dataset.sel = e.target.value; };
+$('#clearChat').onclick = () => { S.chat = []; save(); renderChat(); };
+
+// Strip UI-only fields before sending history to a model
+const wire = m => { const {actions, error, ...rest} = m; return rest; };
+
+async function send(text){
+  if(busy || !text.trim()) return;
+  const bot = activeBot();
+  S.chat.push({role:'user', content:text.trim()});
+  if(!bot){ S.chat.push({role:'assistant', content:'', error:'No bot connected yet. Open the Bots tab and connect Grok, ChatGPT, Claude, or any OpenAI-compatible service.'}); save(); renderChat(); return; }
+  busy = true; renderChat();
+  try{
+    for(let step = 0; step < 6; step++){
+      pendingActions = [];
+      const history = S.chat.filter(m => !(m.role==='assistant' && m.error && !m.content && !m.tool_calls)).slice(-40).map(wire);
+      while(history.length && history[0].role === 'tool') history.shift();
+      const reply = await callBot(bot, history);
+      S.chat.push(reply);
+      if(!reply.tool_calls){ speak(reply.content); break; }
+      for(const tc of reply.tool_calls){
+        const fn = tools[tc.function.name];
+        let result;
+        try{ result = fn ? fn(safeJSON(tc.function.arguments)) : {error:'unknown tool'}; }catch(err){ result = {error:String(err.message||err)}; }
+        S.chat.push({role:'tool', tool_call_id:tc.id, content:JSON.stringify(result)});
+      }
+      if(pendingActions.length) reply.actions = pendingActions.slice();
+      save(); renderChat();
+    }
+  }catch(err){
+    let msg = err.message || String(err);
+    if(/Failed to fetch|NetworkError|Load failed/i.test(msg)) msg = `Couldn't reach ${bot.name}. Check the key and URL — some providers block direct browser requests (CORS); the Android shell or a small proxy solves that.`;
+    S.chat.push({role:'assistant', content:'', error:msg});
+  }
+  if(S.chat.length > 120) S.chat = S.chat.slice(-120);
+  while(S.chat.length && S.chat[0].role !== 'user') S.chat.shift();
+  busy = false; save(); renderChat();
+}
+$('#chatForm').onsubmit = e => { e.preventDefault(); const v=$('#chatInput').value; $('#chatInput').value=''; autosize(); send(v); };
+$('#chatInput').addEventListener('keydown', e => { if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); $('#chatForm').requestSubmit(); }});
+const autosize = () => { const t=$('#chatInput'); t.style.height='auto'; t.style.height=Math.min(t.scrollHeight,140)+'px'; };
+$('#chatInput').addEventListener('input', autosize);
+
+/* ── voice ── */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+document.querySelectorAll('.mic').forEach(btn => {
+  if(!SR){ btn.style.display = 'none'; return; }
+  btn.onclick = () => {
+    const rec = new SR(); rec.lang = navigator.language || 'en-US'; rec.interimResults = false;
+    btn.classList.add('listening');
+    rec.onresult = e => { const t = e.results[0][0].transcript; go('chat'); send(t); };
+    rec.onend = () => btn.classList.remove('listening');
+    rec.onerror = () => { btn.classList.remove('listening'); toast('Mic unavailable'); };
+    rec.start();
+  };
+});
+function speak(text){
+  if(!S.speak || !text || !('speechSynthesis' in window)) return;
+  speechSynthesis.cancel(); speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   Bots
+   ════════════════════════════════════════════════════════════════════ */
+function renderBots(){
+  $('#botList').innerHTML = S.bots.length ? S.bots.map(b => {
+    const p = PROVIDERS[b.provider] || PROVIDERS.custom;
+    return `<div class="row bot"><div class="av" style="color:${p.color}">${esc(b.name.slice(0,2).toUpperCase())}</div>
+      <div class="grow"><div>${esc(b.name)} ${b.id===S.defaultBot?'<span class="pill on">default</span>':''}</div><div class="sub">${esc(p.label)} · ${esc(b.model)}</div></div>
+      <button class="link" data-editbot="${b.id}">Edit</button></div>`;
+  }).join('') : '<div class="empty">No bots yet. Tap “+ Connect”.</div>';
+  document.querySelectorAll('[data-editbot]').forEach(x => x.onclick = () => botSheet(S.bots.find(b=>b.id===x.dataset.editbot)));
+  $('#setName').value = S.name; $('#setSpeak').checked = S.speak;
+  $('#setNotif').textContent = !('Notification' in window) ? 'Unsupported' : Notification.permission === 'granted' ? 'On' : 'Enable';
+  $('#platformNote').innerHTML = NATIVE
+    ? 'Running inside the Orbit Android launcher: installed apps appear on Home and the assistant can open them.'
+    : 'Tip: “Add to Home Screen” runs Orbit full-screen. To make Orbit the phone’s actual home screen with access to every installed app, use the Android launcher build (see README).';
+}
+$('#addBot').onclick = () => botSheet(null);
+$('#setName').onchange = e => { S.name = e.target.value.trim(); save(); };
+$('#setSpeak').onchange = e => { S.speak = e.target.checked; save(); };
+$('#setNotif').onclick = async () => { if('Notification' in window){ await Notification.requestPermission(); renderBots(); } };
+
+function botSheet(bot){
+  const b = bot || {provider:'xai', name:'Grok', base:PROVIDERS.xai.base, model:PROVIDERS.xai.model, key:''};
+  openSheet(`<h3>${bot?'Edit bot':'Connect a bot'}</h3>
+    <label>Provider</label><select id="bProv">${Object.entries(PROVIDERS).map(([k,p])=>`<option value="${k}" ${k===b.provider?'selected':''}>${esc(p.label)}</option>`).join('')}</select>
+    <label>Display name</label><input id="bName" value="${esc(b.name)}">
+    <label>API base URL</label><input id="bBase" value="${esc(b.base)}" placeholder="https://…/v1">
+    <label>Model</label><input id="bModel" value="${esc(b.model)}">
+    <label>API key</label><input id="bKey" type="password" value="${esc(b.key)}" placeholder="Stored only on this device" autocomplete="off">
+    <p class="note">Get keys from the provider’s developer console (e.g. console.x.ai for Grok). Model names change often; use whatever the provider currently lists. “Custom” covers OpenRouter, Groq, Together, Mistral, local Ollama (<code>http://localhost:11434/v1</code>) and similar.</p>
+    <div class="btns"><button class="btn ghost" id="bTest">Test</button><button class="btn" id="bSave">Save</button></div>
+    ${bot?`<div class="btns"><button class="btn ghost" id="bDef">Make default</button><button class="btn danger" id="bDel">Remove</button></div>`:''}`, s => {
+      const read = () => ({provider:$('#bProv').value, name:$('#bName').value.trim()||'Bot', base:$('#bBase').value.trim(), model:$('#bModel').value.trim(), key:$('#bKey').value.trim()});
+      $('#bProv').onchange = e => { const p = PROVIDERS[e.target.value]; $('#bBase').value = p.base; $('#bModel').value = p.model; $('#bName').value = p.label.split(' ').pop().replace(/[()]/g,''); };
+      $('#bTest').onclick = async () => {
+        const t = read(); if(!t.base || !t.model) return toast('Base URL and model required');
+        $('#bTest').textContent = 'Testing…';
+        try{ const r = await callBot(t, [{role:'user', content:'Reply with just the word: connected'}]); toast('✓ ' + (r.content||'OK').slice(0,40)); }
+        catch(err){ toast('✗ ' + (err.message||err).slice(0,80)); }
+        $('#bTest').textContent = 'Test';
+      };
+      $('#bSave').onclick = () => {
+        const v = read(); if(!v.base || !v.model) return toast('Base URL and model required');
+        if(bot) Object.assign(bot, v); else { const nb = {id:uid(), ...v}; S.bots.push(nb); if(!S.defaultBot) S.defaultBot = nb.id; }
+        save(); closeSheet(); renderBots();
+      };
+      if(bot){
+        $('#bDef').onclick = () => { S.defaultBot = bot.id; save(); closeSheet(); renderBots(); };
+        $('#bDel').onclick = () => { S.bots = S.bots.filter(x=>x.id!==bot.id); if(S.defaultBot===bot.id) S.defaultBot = S.bots[0]?.id || null; save(); closeSheet(); renderBots(); };
+      }
+  });
+}
+
+/* ── backup ── */
+$('#exportBtn').onclick = () => {
+  const data = {...S, bots:S.bots.map(b=>({...b, key:''}))};   // never export keys
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(data,null,2)], {type:'application/json'}));
+  a.download = 'orbit-backup.json'; a.click();
+};
+$('#importBtn').onclick = () => $('#importFile').click();
+$('#importFile').onchange = async e => {
+  try{ const d = JSON.parse(await e.target.files[0].text()); S = Object.assign(fresh(), d); save(); toast('Imported'); renderBots(); }
+  catch(err){ toast('Invalid backup file'); }
+};
+
+/* ════════════════════════════════════════════════════════════════════
+   Reminder notifications (while Orbit is open / is the launcher)
+   ════════════════════════════════════════════════════════════════════ */
+function checkReminders(){
+  const now = Date.now(); let changed = false;
+  for(const r of S.reminders){
+    if(r.done || r.notified || !r.due || new Date(r.due).getTime() > now) continue;
+    r.notified = true; changed = true;
+    if(NATIVE && NATIVE.notify) NATIVE.notify('Orbit reminder', r.text);
+    else if('Notification' in window && Notification.permission === 'granted'){
+      navigator.serviceWorker?.ready.then(reg => reg.showNotification('Orbit reminder', {body:r.text, icon:'icon.svg'})).catch(() => new Notification('Orbit reminder', {body:r.text}));
+    } else toast('⏰ ' + r.text);
+  }
+  if(changed){ save(); if($('#view-home').classList.contains('active')) renderHome(); }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   Boot
+   ════════════════════════════════════════════════════════════════════ */
+if(NATIVE && NATIVE.listApps){ try{ nativeApps = JSON.parse(NATIVE.listApps()); }catch(e){ nativeApps = null; } }
+renderHome();
+setInterval(() => { if($('#view-home').classList.contains('active')) tick(); checkReminders(); }, 15000);
+checkReminders();
+if('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(()=>{});
+window.addEventListener('popstate', () => go('home'));
+</script>
+</body>
+</html>
