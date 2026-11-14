@@ -2,14 +2,10 @@ package app.orbit.launcher
 
 import android.Manifest
 import android.app.Activity
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.util.Base64
@@ -26,10 +22,15 @@ import java.io.ByteArrayOutputStream
 
 /**
  * Orbit launcher: a home-screen replacement whose UI is the Orbit web app.
- * The web app gets `window.OrbitNative` with: listApps(), appIcon(pkg), launchApp(pkg), notify(title, body).
+ * The web app gets `window.OrbitNative` with: listApps(), appIcon(pkg), launchApp(pkg), notify(title, body), setAlarms(json).
  */
 class MainActivity : Activity() {
     private lateinit var web: WebView
+
+    companion object {
+        // Google blocks its sign-in inside WebViews, so it's absent here (see README).
+        private val AUTH_HOSTS = setOf("accounts.spotify.com", "challenge.spotify.com")
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,7 +55,8 @@ class MainActivity : Activity() {
                 // Hand tel:, sms:, mailto:, other app deep links and external sites to Android.
                 override fun shouldOverrideUrlLoading(view: WebView, req: WebResourceRequest): Boolean {
                     val url = req.url
-                    if (url.host == "appassets.androidplatform.net") return false
+                    // Our own pages and OAuth sign-in pages stay inside Orbit; everything else goes to Android.
+                    if (url.host == "appassets.androidplatform.net" || url.host in AUTH_HOSTS) return false
                     return try { startActivity(Intent(Intent.ACTION_VIEW, url)); true } catch (e: Exception) { true }
                 }
             }
@@ -105,16 +107,9 @@ class MainActivity : Activity() {
         }
 
         @JavascriptInterface
-        fun notify(title: String, body: String) {
-            val nm = getSystemService(NotificationManager::class.java)
-            nm.createNotificationChannel(NotificationChannel("orbit", "Reminders", NotificationManager.IMPORTANCE_HIGH))
-            val tap = PendingIntent.getActivity(this@MainActivity, 0,
-                Intent(this@MainActivity, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
-            val n = android.app.Notification.Builder(this@MainActivity, "orbit")
-                .setSmallIcon(android.R.drawable.ic_popup_reminder)
-                .setContentTitle(title).setContentText(body)
-                .setContentIntent(tap).setAutoCancel(true).build()
-            nm.notify(System.currentTimeMillis().toInt(), n)
-        }
+        fun notify(title: String, body: String) = Alarms.notify(this@MainActivity, title, body)
+
+        @JavascriptInterface
+        fun setAlarms(json: String) = Alarms.replaceAll(this@MainActivity, json)
     }
 }

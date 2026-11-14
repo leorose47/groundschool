@@ -27,13 +27,28 @@ cd orbit/web && python3 -m http.server 8080
   - Anything that leaves Orbit (calls, texts, emails, opening apps) shows up as a **tap-to-confirm button**. The AI can't text or call anyone without your tap.
 - **Privacy.** All data, including API keys, stays in the device's localStorage. Export never includes keys.
 
+## Connected services
+
+Go to **Bots → Connected services**. Each service uses your own free developer client ID, and the app walks you through getting one. After you connect, the assistant gets new tools and Home shows live cards.
+
+| Service | What the assistant can do | Home card |
+|---|---|---|
+| **Google** (Calendar + Gmail) | `calendar_events`, `calendar_add_event`*, `gmail_search`, `gmail_read`, `gmail_send`* | Today's calendar |
+| **Spotify** | `spotify_play` (search + play), `spotify_control` (pause/resume/skip/shuffle), `spotify_now_playing` | Now playing, with controls |
+
+\* These show a **Confirm** button. Nothing is added to your calendar and no email is sent until you tap it.
+
+- **Google** sign-in runs entirely in the browser (Google Identity Services). A sign-in lasts about an hour. When it expires, the assistant shows a **Reconnect** button. While your Google Cloud project is in "Testing" mode, add yourself as a test user.
+- **Spotify** uses the PKCE flow, so it renews itself. Spotify only accepts `https://` or `http://127.0.0.1` redirect URIs, not `localhost`. Remote playback control requires **Spotify Premium** and Spotify open on some device.
+- **Prompt injection:** emails can contain text that tries to give the AI instructions. The system prompt tells the bot to treat email and calendar content as information only. On top of that, everything that sends or changes something outside Orbit needs your tap.
+
 ## Making it the phone's only interface (Android)
 
 Open `android/` in Android Studio and run it on your phone. Then go to **Settings → Apps → Default apps → Home app → Orbit**. As your home screen, Orbit:
 
 - shows **every installed app** on the dashboard, and the AI can open any of them by name
 - comes back when you press the Home button, and Back never leaves it
-- sends real Android notifications for reminders
+- schedules reminders with **AlarmManager**, so they fire even when Orbit is closed, and reschedules them after a reboot. On Android 12+, allow "Alarms & reminders" for Orbit to get exact timing. Without that permission, Android may deliver reminders a few minutes late.
 - serves its UI from a real HTTPS origin
 
 > The Android shell has **not been built or tested yet**. It was written without an Android SDK available. Expect to fix small Gradle or SDK version details on the first build.
@@ -43,4 +58,5 @@ Open `android/` in Android Studio and run it on your phone. Then go to **Setting
 - **iPhone:** iOS doesn't let any app replace the home screen or control other apps. On iPhone, Orbit runs as a full-screen web app and uses links (`tel:`, `sms:`, `mailto:`, universal links) to hand off to other apps.
 - **"Connect to every app":** no phone OS lets one app read data from inside other apps. Orbit can **launch** any app and **hand off** to it through deep links. To work *inside* other apps you need each service's own API (Spotify, Google Calendar, Gmail and so on) or, on Android, an AccessibilityService. Both are possible next steps.
 - **CORS:** some AI providers block requests sent directly from a browser. Anthropic and OpenAI allow them. If a provider refuses, put a small proxy in front of it or use the Android shell.
-- **Reminders** in the web version only fire while Orbit is open (or set as your launcher). Reliable background alarms need the native shell (AlarmManager), which is a planned next step.
+- **Reminders** in the web version only fire while Orbit is open. The Android shell fires them in the background.
+- **Google sign-in inside the Android shell:** Google blocks OAuth inside embedded WebViews, so the Google connection works in the web/PWA version but not yet in the shell. The fix is to sign in through a Chrome Custom Tab (needs a small backend or AppAuth) and is the next planned step. Spotify sign-in works in the shell: register `https://appassets.androidplatform.net/assets/index.html` as an extra redirect URI.
