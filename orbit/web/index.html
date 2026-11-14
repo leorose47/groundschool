@@ -3,119 +3,175 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0b0d12">
+<meta name="theme-color" content="#0c1016">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Orbit</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@300;500;600&display=swap">
 <style>
+/* Layout: one-column phone shell (max 560px), floating glass tab bar, bottom sheets for every form. */
 :root{
-  --bg:#0b0d12; --bg2:#12151d; --card:#171b25; --card2:#1e2330; --line:#2a3040;
-  --text:#eef1f7; --text2:#a6aec0; --text3:#6b7487;
-  --accent:#7c9cff; --accent2:#b18cff; --good:#4fd6a0; --warn:#ffb65c; --bad:#ff6b7d;
+  --bg:#0c1016; --bg2:#121821; --card:#161d27; --card2:#1d2633; --line:#273141;
+  --text:#edf2f8; --text2:#a3afc0; --text3:#6f7b8e;
+  --accent:#5cc8ff; --on-accent:#04131d; --accent-soft:rgba(92,200,255,.14);
+  --sun:#ffc861; --good:#4fd6a0; --good-soft:rgba(79,214,160,.15);
+  --bad:#ff6b7d; --bad-soft:rgba(255,107,125,.12); --on-bad:#ffffff; --warn:#ffb65c;
+  --glass:rgba(22,29,39,.86); --scrim:rgba(0,0,0,.55);
+  --font-ui:Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-display:"Space Grotesk", Inter, -apple-system, BlinkMacSystemFont, sans-serif;
   --radius:18px; --safe-b:env(safe-area-inset-bottom,0px); --safe-t:env(safe-area-inset-top,0px);
+  --gutter-l:max(16px, env(safe-area-inset-left, 0px)); --gutter-r:max(16px, env(safe-area-inset-right, 0px));
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#eef2f7; --bg2:#ffffff; --card:#ffffff; --card2:#e7edf4; --line:#d5dde8;
+    --text:#0e1520; --text2:#465366; --text3:#76839a;
+    --accent:#0a74b8; --on-accent:#ffffff; --accent-soft:rgba(10,116,184,.10);
+    --sun:#a86a12; --good:#13875a; --good-soft:rgba(19,135,90,.12);
+    --bad:#d23650; --bad-soft:rgba(210,54,80,.09); --on-bad:#ffffff; --warn:#a85f00;
+    --glass:rgba(255,255,255,.9); --scrim:rgba(14,21,32,.35);
+    color-scheme:light;
+  }
+}
+:root[data-theme="light"]{
+  --bg:#eef2f7; --bg2:#ffffff; --card:#ffffff; --card2:#e7edf4; --line:#d5dde8;
+  --text:#0e1520; --text2:#465366; --text3:#76839a;
+  --accent:#0a74b8; --on-accent:#ffffff; --accent-soft:rgba(10,116,184,.10);
+  --sun:#a86a12; --good:#13875a; --good-soft:rgba(19,135,90,.12);
+  --bad:#d23650; --bad-soft:rgba(210,54,80,.09); --on-bad:#ffffff; --warn:#a85f00;
+  --glass:rgba(255,255,255,.9); --scrim:rgba(14,21,32,.35);
+  color-scheme:light;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;background:var(--bg);color:var(--text);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,sans-serif}
+html,body{height:100%;background:var(--bg);color:var(--text);font:15px/1.5 var(--font-ui)}
 body{overflow:hidden}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:10px}
 input,textarea,select{font:inherit;color:var(--text);background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:11px 13px;width:100%;outline:none}
 input:focus,textarea:focus,select:focus{border-color:var(--accent)}
 label{display:block;font-size:12px;color:var(--text2);margin:12px 0 5px}
+code{font:12.5px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--card2);padding:1px 5px;border-radius:6px;word-break:break-all}
+pre{font:12.5px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--card2);padding:10px;border-radius:10px;overflow-x:auto;white-space:pre}
 
 #app{height:100%;display:flex;flex-direction:column;max-width:560px;margin:0 auto;position:relative}
-.view{flex:1;overflow-y:auto;padding:calc(18px + var(--safe-t)) 16px 110px;display:none}
+.view{flex:1;overflow-y:auto;padding:calc(18px + var(--safe-t)) var(--gutter-r) 112px var(--gutter-l);display:none}
 .view.active{display:block}
 #view-chat.active{display:flex;flex-direction:column;padding-bottom:0}
 
 /* tab bar */
 .tabs{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + var(--safe-b));width:min(528px,calc(100% - 32px));
-  display:flex;background:rgba(23,27,37,.86);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid var(--line);border-radius:22px;padding:6px;z-index:20}
-.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0;border-radius:16px;color:var(--text3);font-size:11px}
+  display:flex;background:var(--glass);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid var(--line);border-radius:22px;padding:6px;z-index:20}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0;border-radius:16px;color:var(--text3);font-size:11px;font-weight:500}
 .tab svg{width:22px;height:22px}
 .tab.active{color:var(--text);background:var(--card2)}
 
 /* home */
-.clock{font-size:64px;font-weight:200;letter-spacing:-2px;line-height:1}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.clock{font:300 64px/1 var(--font-display);letter-spacing:-2px;font-variant-numeric:tabular-nums}
 .date{color:var(--text2);margin-top:6px}
-.greet{font-size:20px;font-weight:600;margin:22px 0 12px}
-.ask{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:6px 6px 6px 16px}
-.ask input{border:0;background:none;padding:10px 0}
+.mark{width:40px;height:40px;flex-shrink:0}
+.greet{font:600 21px/1.25 var(--font-display);margin:22px 0 12px;text-wrap:balance}
+.ask{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:6px 6px 6px 16px}
+.ask input{border:0;background:none;padding:10px 0;min-width:0}
 .icon-btn{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;background:var(--card2);flex-shrink:0}
-.icon-btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0b0d12}
+.icon-btn.primary{background:var(--accent);color:var(--on-accent)}
 .icon-btn svg{width:20px;height:20px}
-.icon-btn.listening{background:var(--bad);color:#fff;animation:pulse 1.2s infinite}
+.icon-btn.listening{background:var(--bad);color:var(--on-bad);animation:pulse 1.2s infinite}
 @keyframes pulse{50%{opacity:.6}}
-.chips{display:flex;gap:8px;overflow-x:auto;margin:12px -16px 0;padding:0 16px;scrollbar-width:none}
+.chips{display:flex;gap:8px;overflow-x:auto;margin:12px calc(-1 * var(--gutter-r)) 0 calc(-1 * var(--gutter-l));padding:0 var(--gutter-r) 0 var(--gutter-l);scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
 .chip{white-space:nowrap;padding:8px 13px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--text2);font-size:13px}
+.chip:hover{color:var(--text);border-color:var(--accent)}
 .section{margin-top:26px}
-.section-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-.section-h h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);font-weight:600}
-.link{color:var(--accent);font-size:13px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px}
-.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px 8px}
-.appt{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;color:var(--text2);text-align:center;min-width:0;position:relative}
-.appt .ico{width:58px;height:58px;border-radius:17px;background:var(--card2);border:1px solid var(--line);display:grid;place-items:center;font-size:28px;overflow:hidden}
+.section-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:10px}
+.section-h h2{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--text3);font-weight:600}
+.link{color:var(--accent);font-size:13px;font-weight:500}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:4px 14px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px 8px}
+.appt{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;color:var(--text2);text-align:center;min-width:0;position:relative;text-decoration:none}
+.appt .ico{width:58px;height:58px;border-radius:17px;background:var(--card);border:1px solid var(--line);display:grid;place-items:center;font-size:27px;overflow:hidden;transition:transform .15s}
+.appt:active .ico{transform:scale(.92)}
 .appt .ico img{width:100%;height:100%}
 .appt span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.appt .del{position:absolute;top:-6px;right:4px;width:22px;height:22px;border-radius:50%;background:var(--bad);color:#fff;font-size:14px;line-height:22px;display:none}
+.appt .del{position:absolute;top:-6px;right:4px;width:22px;height:22px;border-radius:50%;background:var(--bad);color:var(--on-bad);font-size:14px;line-height:22px;display:none}
 .editing .appt .del{display:block}
-.row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.editing .appt .ico{animation:wiggle .3s infinite alternate}
+@keyframes wiggle{from{transform:rotate(-2deg)}to{transform:rotate(2deg)}}
+.row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
 .row:last-child{border-bottom:0}
 .row .grow{flex:1;min-width:0}
 .row .sub{font-size:12px;color:var(--text3)}
-.check{width:22px;height:22px;border-radius:50%;border:2px solid var(--text3);flex-shrink:0}
+.tap{cursor:pointer}
+.check{width:22px;height:22px;border-radius:50%;border:2px solid var(--text3);flex-shrink:0;transition:background .15s,border-color .15s}
+.check:hover{border-color:var(--good);background:var(--good-soft)}
 .overdue{color:var(--warn)}
-.empty{color:var(--text3);font-size:14px;padding:6px 0}
+.empty{color:var(--text3);font-size:14px;padding:12px 0}
 .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.stat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px}
-.stat b{display:block;font-size:22px;font-weight:600}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;text-align:left}
+.stat b{display:block;font:600 22px/1.2 var(--font-display);font-variant-numeric:tabular-nums}
 .stat span{font-size:12px;color:var(--text3)}
 
 /* chat */
 .chat-head{display:flex;align-items:center;gap:10px;padding-bottom:12px;border-bottom:1px solid var(--line)}
-.chat-head select{flex:1;padding:9px 12px}
+.chat-head select{flex:1;padding:9px 12px;min-width:0}
 .msgs{flex:1;overflow-y:auto;padding:14px 0;display:flex;flex-direction:column;gap:10px}
-.msg{max-width:86%;padding:10px 14px;border-radius:18px;white-space:pre-wrap;word-wrap:break-word}
-.msg.user{align-self:flex-end;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0b0d12;border-bottom-right-radius:6px}
+.msg{max-width:86%;padding:10px 14px;border-radius:18px;white-space:pre-wrap;overflow-wrap:anywhere;animation:rise .18s ease-out}
+.msg.user{align-self:flex-end;background:var(--accent);color:var(--on-accent);border-bottom-right-radius:6px}
 .msg.bot{align-self:flex-start;background:var(--card);border:1px solid var(--line);border-bottom-left-radius:6px}
-.msg.err{align-self:flex-start;background:rgba(255,107,125,.12);border:1px solid rgba(255,107,125,.4);color:#ffc2ca;font-size:13px}
-.msg.sys{align-self:center;color:var(--text3);font-size:12px;background:none;padding:2px}
-.action{align-self:flex-start;display:flex;align-items:center;gap:12px;background:var(--card2);border:1px solid var(--accent);border-radius:16px;padding:10px 12px;max-width:90%}
+.msg.err{align-self:flex-start;background:var(--bad-soft);border:1px solid var(--bad);font-size:13px}
+.msg.sys{align-self:center;text-align:center;color:var(--text3);font-size:13px;background:none;max-width:100%}
+@keyframes rise{from{opacity:.4;transform:translateY(4px)}to{opacity:1;transform:none}}
+.action{align-self:flex-start;display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--accent);border-radius:16px;padding:10px 12px;max-width:92%;animation:rise .18s ease-out}
 .action .ai{font-size:22px}
-.action .grow{flex:1;min-width:0;font-size:13px}
-.action .grow b{display:block;font-size:14px}
-.action a,.btn{display:inline-block;padding:9px 14px;border-radius:12px;background:var(--accent);color:#0b0d12;font-weight:600;text-decoration:none;font-size:14px;text-align:center}
+.action .grow{flex:1;min-width:0;font-size:13px;color:var(--text2);overflow-wrap:anywhere}
+.action .grow b{display:block;font-size:14px;color:var(--text)}
+.action a,.btn{display:inline-block;padding:9px 14px;border-radius:12px;background:var(--accent);color:var(--on-accent);font-weight:600;text-decoration:none;font-size:14px;text-align:center;flex-shrink:0}
 .btn.ghost{background:var(--card2);color:var(--text);border:1px solid var(--line)}
-.btn.danger{background:transparent;color:var(--bad);border:1px solid rgba(255,107,125,.4)}
+.btn.danger{background:transparent;color:var(--bad);border:1px solid var(--bad)}
 .btn.block{display:block;width:100%;margin-top:14px}
-.typing{align-self:flex-start;color:var(--text3);font-size:13px;padding:4px 6px}
+.btn:disabled{opacity:.6}
+.typing{align-self:flex-start;display:flex;gap:4px;padding:12px 14px;background:var(--card);border:1px solid var(--line);border-radius:18px;border-bottom-left-radius:6px}
+.typing span{width:7px;height:7px;border-radius:50%;background:var(--text3);animation:blink 1.2s infinite}
+.typing span:nth-child(2){animation-delay:.2s}.typing span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.25}40%{opacity:1}}
 .composer{display:flex;gap:8px;align-items:flex-end;padding:10px 0 calc(96px + var(--safe-b))}
 .composer textarea{resize:none;max-height:140px;border-radius:16px}
 
 /* bots */
-.bot{display:flex;align-items:center;gap:12px}
-.bot .av{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-weight:700;font-size:15px;background:var(--card2)}
-.pill{font-size:11px;padding:3px 8px;border-radius:999px;background:var(--card2);color:var(--text2)}
-.pill.on{background:rgba(79,214,160,.15);color:var(--good)}
-.note{font-size:12.5px;color:var(--text3);margin-top:10px;line-height:1.5}
-.toggle{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
-.toggle input{width:auto}
+.row.bot{display:flex;align-items:center;gap:12px}
+.row.bot .av{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-weight:700;font-size:15px;background:var(--card2);flex-shrink:0}
+.pill{display:inline-block;font-size:11px;padding:3px 8px;border-radius:999px;background:var(--card2);color:var(--text2);font-weight:500;vertical-align:1px}
+.pill.on{background:var(--good-soft);color:var(--good)}
+.pill.sun{background:var(--card2);color:var(--sun)}
+.note{font-size:12.5px;color:var(--text3);margin-top:10px;line-height:1.55}
+.note b{color:var(--text2)}
+ol.note{padding-left:18px;display:grid;gap:4px}
+.toggle{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.toggle:last-child{border-bottom:0}
+.toggle input[type=checkbox]{width:20px;height:20px;accent-color:var(--accent)}
 
 /* sheet */
-.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:40;display:none}
-.sheet{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:min(560px,100%);max-height:88vh;overflow-y:auto;background:var(--bg2);border:1px solid var(--line);border-bottom:0;border-radius:24px 24px 0 0;padding:20px 16px calc(24px + var(--safe-b));z-index:41;display:none}
-.sheet h3{font-size:18px;margin-bottom:4px}
+.sheet-bg{position:fixed;inset:0;background:var(--scrim);z-index:40;display:none}
+.sheet{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:min(560px,100%);max-height:88vh;overflow-y:auto;background:var(--bg2);border:1px solid var(--line);border-bottom:0;border-radius:24px 24px 0 0;
+  padding:22px var(--gutter-r) calc(24px + var(--safe-b)) var(--gutter-l);z-index:41;display:none;animation:up .22s ease-out}
+@keyframes up{from{transform:translate(-50%,30px);opacity:.5}to{transform:translate(-50%,0);opacity:1}}
+.sheet h3{font:600 19px/1.3 var(--font-display);margin-bottom:4px}
 .sheet .btns{display:flex;gap:10px;margin-top:18px}
 .sheet .btns>*{flex:1}
 .open .sheet,.open .sheet-bg{display:block}
-.toast{position:fixed;left:50%;transform:translateX(-50%);top:calc(16px + var(--safe-t));background:var(--card2);border:1px solid var(--line);padding:10px 16px;border-radius:14px;z-index:60;font-size:14px;display:none}
+.welcome-mark{width:56px;height:56px;margin-bottom:12px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(92px + var(--safe-b));background:var(--text);color:var(--bg);padding:10px 16px;border-radius:14px;z-index:60;font-size:14px;font-weight:500;display:none;max-width:calc(100% - 32px);text-align:center}
 .seg{display:flex;gap:6px;margin-bottom:14px}
-.seg button{flex:1;padding:9px;border-radius:12px;background:var(--card);border:1px solid var(--line);color:var(--text2);font-size:13px}
-.seg button.active{background:var(--card2);color:var(--text);border-color:var(--accent)}
+.seg button{flex:1;padding:9px;border-radius:12px;background:var(--card);border:1px solid var(--line);color:var(--text2);font-size:13px;font-weight:500}
+.seg button.active{background:var(--accent-soft);color:var(--text);border-color:var(--accent)}
+@media (prefers-reduced-motion: reduce){ *,*::before,*::after{animation:none!important;transition:none!important} }
 </style>
 </head>
 <body>
@@ -123,14 +179,16 @@ label{display:block;font-size:12px;color:var(--text2);margin:12px 0 5px}
 
   <!-- ═════════ HOME ═════════ -->
   <section class="view active" id="view-home">
-    <div class="clock" id="clock">--:--</div>
-    <div class="date" id="date"></div>
+    <div class="top">
+      <div><div class="clock" id="clock">--:--</div><div class="date" id="date"></div></div>
+      <div class="mark" id="homeMark"></div>
+    </div>
     <div class="greet" id="greet">Hello</div>
 
     <form class="ask" id="homeAsk">
-      <input id="homeInput" placeholder="Ask Orbit to do something…" autocomplete="off">
-      <button type="button" class="icon-btn mic" title="Speak"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
-      <button class="icon-btn primary" title="Send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      <input id="homeInput" placeholder="Ask Orbit to do something…" autocomplete="off" aria-label="Ask Orbit">
+      <button type="button" class="icon-btn mic" title="Speak" aria-label="Speak"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+      <button class="icon-btn primary" title="Send" aria-label="Send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
     </form>
     <div class="chips" id="suggest"></div>
 
@@ -158,14 +216,14 @@ label{display:block;font-size:12px;color:var(--text2);margin:12px 0 5px}
   <!-- ═════════ CHAT ═════════ -->
   <section class="view" id="view-chat">
     <div class="chat-head">
-      <select id="botPick"></select>
-      <button class="icon-btn" id="clearChat" title="New conversation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>
+      <select id="botPick" aria-label="Assistant"></select>
+      <button class="icon-btn" id="clearChat" title="New conversation" aria-label="New conversation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>
     </div>
     <div class="msgs" id="msgs"></div>
     <form class="composer" id="chatForm">
-      <textarea id="chatInput" rows="1" placeholder="Message…"></textarea>
-      <button type="button" class="icon-btn mic" title="Speak"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
-      <button class="icon-btn primary" title="Send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button>
+      <textarea id="chatInput" rows="1" placeholder="Message…" aria-label="Message"></textarea>
+      <button type="button" class="icon-btn mic" title="Speak" aria-label="Speak"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+      <button class="icon-btn primary" title="Send" aria-label="Send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button>
     </form>
   </section>
 
@@ -194,10 +252,11 @@ label{display:block;font-size:12px;color:var(--text2);margin:12px 0 5px}
     <div class="section">
       <div class="section-h"><h2>Settings</h2></div>
       <div class="card">
-        <div class="toggle"><span>Your name</span><input id="setName" style="max-width:55%" placeholder="Optional"></div>
+        <div class="toggle"><span>Your name</span><input id="setName" style="max-width:55%" placeholder="Optional" aria-label="Your name"></div>
         <div class="toggle"><span>Read replies aloud</span><input type="checkbox" id="setSpeak"></div>
-        <div class="toggle"><span>Reminder notifications</span><button class="btn ghost" id="setNotif">Enable</button></div>
-        <div class="toggle" style="border:0"><span>Backup</span><span><button class="btn ghost" id="exportBtn">Export</button> <button class="btn ghost" id="importBtn">Import</button></span></div>
+        <div class="toggle"><span>Appearance</span><select id="setTheme" style="max-width:45%"><option value="">Match system</option><option value="light">Light</option><option value="dark">Dark</option></select></div>
+        <div class="toggle" id="rowNotif"><span>Reminder notifications</span><button class="btn ghost" id="setNotif">Enable</button></div>
+        <div class="toggle" id="rowBackup"><span>Backup</span><span><button class="btn ghost" id="exportBtn">Export</button> <button class="btn ghost" id="importBtn">Import</button></span></div>
       </div>
       <p class="note" id="platformNote"></p>
     </div>
@@ -222,6 +281,7 @@ label{display:block;font-size:12px;color:var(--text2);margin:12px 0 5px}
    ════════════════════════════════════════════════════════════════════ */
 const KEY = 'orbit.v1';
 const NATIVE = window.OrbitNative || null;   // injected by the Android launcher shell
+const PREVIEW = false;                         // true in the hosted preview build, where outside connections are blocked
 
 const DEFAULT_APPS = [
   {id:'a1', name:'Phone',    icon:'📞', url:'tel:'},
@@ -276,7 +336,7 @@ function go(view){
   document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-'+view));
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.go === view));
   if(view === 'home') renderHome();
-  if(view === 'chat'){ renderChat(); setTimeout(()=>$('#chatInput').focus({preventScroll:true}), 50); }
+  if(view === 'chat'){ renderChat(); if(matchMedia('(pointer: fine)').matches) setTimeout(()=>$('#chatInput').focus({preventScroll:true}), 50); }
   if(view === 'life') renderLife();
   if(view === 'bots') renderBots();
 }
@@ -327,7 +387,7 @@ function renderHome(){
   renderLive();
   $('#upNext').innerHTML = open.length ? open.slice(0,4).map(remRow).join('') : '<div class="empty">Nothing scheduled. Ask Orbit to remind you of something.</div>';
 
-  let tiles = S.apps.map(a => `<div class="appt" data-app="${a.id}"><button class="del" data-del="${a.id}">×</button><div class="ico">${esc(a.icon)}</div><span>${esc(a.name)}</span></div>`);
+  let tiles = S.apps.map(a => `<a class="appt" data-app="${a.id}" href="${esc(safeHref(a.url))}" ${/^https?:/i.test(a.url) ? 'target="_blank" rel="noopener"' : ''}><button class="del" data-del="${a.id}" aria-label="Remove ${esc(a.name)}">×</button><div class="ico" aria-hidden="true">${esc(a.icon)}</div><span>${esc(a.name)}</span></a>`);
   if(nativeApps) tiles = tiles.concat(nativeApps.map(a => `<div class="appt" data-pkg="${esc(a.pkg)}"><div class="ico"><img loading="lazy" alt="" data-icon="${esc(a.pkg)}"></div><span>${esc(a.label)}</span></div>`));
   $('#appGrid').innerHTML = tiles.join('');
   if(NATIVE && NATIVE.appIcon) document.querySelectorAll('img[data-icon]').forEach(img => {
@@ -336,19 +396,39 @@ function renderHome(){
 }
 function remRow(r){
   const over = r.due && new Date(r.due) < new Date();
-  return `<div class="row"><button class="check" data-done="${r.id}" title="Complete"></button><div class="grow"><div>${esc(r.text)}</div><div class="sub ${over?'overdue':''}">${esc(fmtWhen(r.due))}</div></div></div>`;
+  return `<div class="row"><button class="check" data-done="${r.id}" title="Mark done" aria-label="Mark “${esc(r.text)}” done"></button><div class="grow tap" data-editrem="${r.id}"><div>${esc(r.text)}</div><div class="sub ${over?'overdue':''}">${esc(fmtWhen(r.due))}</div></div></div>`;
 }
 $('#suggest').addEventListener('click', e => { const c = e.target.closest('.chip'); if(c){ go('chat'); send(c.textContent); }});
 $('#homeAsk').onsubmit = e => { e.preventDefault(); const v=$('#homeInput').value.trim(); if(!v) return; $('#homeInput').value=''; go('chat'); send(v); };
 document.addEventListener('click', e => {
   const d = e.target.closest('[data-done]');
-  if(d){ const r = S.reminders.find(x => x.id === d.dataset.done); if(r){ r.done = true; save(); toast('Done ✓'); renderHome(); if($('#view-life').classList.contains('active')) renderLife(); } }
+  if(d){ const r = S.reminders.find(x => x.id === d.dataset.done); if(r){ r.done = true; save(); navigator.vibrate?.(10); toast('Marked done'); refreshViews(); } return; }
+  const ed = e.target.closest('[data-editrem]');
+  if(ed){ const r = S.reminders.find(x => x.id === ed.dataset.editrem); if(r) remSheet(r); }
 });
+const refreshViews = () => { renderHome(); if($('#view-life').classList.contains('active')) renderLife(); };
+function remSheet(r){
+  openSheet(`<h3>${r ? 'Edit reminder' : 'New reminder'}</h3>
+    <label for="rText">What</label><input id="rText" value="${esc(r ? r.text : '')}" placeholder="Call the dentist">
+    <label for="rDue">When</label><input id="rDue" type="datetime-local" value="${r ? toLocalInput(r.due) : ''}">
+    <div class="btns"><button class="btn ghost" id="rCancel">Cancel</button><button class="btn" id="rSave">Save</button></div>
+    ${r ? '<div class="btns"><button class="btn danger" id="rDel">Delete reminder</button></div>' : ''}`, s => {
+      s.querySelector('#rCancel').onclick = closeSheet;
+      s.querySelector('#rSave').onclick = () => {
+        const t = $('#rText').value.trim(); if(!t) return toast('Describe the reminder first');
+        const v = $('#rDue').value, due = v ? new Date(v).toISOString() : '';
+        if(r){ r.text = t; if(r.due !== due) r.notified = false; r.due = due; save(); renderHome(); }
+        else tools.add_reminder({text:t, due});
+        closeSheet(); refreshViews();
+      };
+      const del = s.querySelector('#rDel');
+      if(del) del.onclick = () => { S.reminders = S.reminders.filter(x => x.id !== r.id); save(); closeSheet(); toast('Reminder deleted'); refreshViews(); };
+  });
+}
 $('#appGrid').addEventListener('click', e => {
   const del = e.target.closest('[data-del]');
-  if(del){ S.apps = S.apps.filter(a => a.id !== del.dataset.del); save(); renderHome(); return; }
-  if($('#appGrid').classList.contains('editing')){ const t = e.target.closest('[data-app]'); if(t) appSheet(S.apps.find(a=>a.id===t.dataset.app)); return; }
-  const t = e.target.closest('[data-app]'); if(t){ launchUrl(S.apps.find(a=>a.id===t.dataset.app).url); return; }
+  if(del){ e.preventDefault(); S.apps = S.apps.filter(a => a.id !== del.dataset.del); save(); renderHome(); return; }
+  if($('#appGrid').classList.contains('editing')){ const t = e.target.closest('[data-app]'); if(t){ e.preventDefault(); appSheet(S.apps.find(a=>a.id===t.dataset.app)); } return; }
   const n = e.target.closest('[data-pkg]'); if(n && NATIVE) NATIVE.launchApp(n.dataset.pkg);
 });
 $('#editApps').onclick = () => { const g=$('#appGrid'); g.classList.toggle('editing'); $('#editApps').textContent = g.classList.contains('editing') ? 'Done' : 'Edit'; };
@@ -357,9 +437,9 @@ function appSheet(app){
   const a = app || {name:'', icon:'⭐', url:'https://'};
   openSheet(`<h3>${app?'Edit':'Add'} app shortcut</h3>
     <p class="note">Any link works: a website, or an app deep link like <code>spotify:</code>, <code>whatsapp://</code>, <code>tel:</code>, <code>sms:</code>.</p>
-    <label>Name</label><input id="apName" value="${esc(a.name)}">
-    <label>Icon (emoji)</label><input id="apIcon" value="${esc(a.icon)}" maxlength="4">
-    <label>Link</label><input id="apUrl" value="${esc(a.url)}">
+    <label for="apName">Name</label><input id="apName" value="${esc(a.name)}">
+    <label for="apIcon">Icon (emoji)</label><input id="apIcon" value="${esc(a.icon)}" maxlength="4">
+    <label for="apUrl">Link</label><input id="apUrl" value="${esc(a.url)}">
     <div class="btns"><button class="btn ghost" id="apCancel">Cancel</button><button class="btn" id="apSave">Save</button></div>`, s => {
       s.querySelector('#apCancel').onclick = closeSheet;
       s.querySelector('#apSave').onclick = () => {
@@ -370,11 +450,7 @@ function appSheet(app){
       };
   });
 }
-function launchUrl(url){
-  if(!url) return;
-  if(/^https?:/i.test(url)) window.open(url, '_blank', 'noopener');
-  else location.href = url;
-}
+const safeHref = u => /^\s*(javascript|data|vbscript):/i.test(u || '') ? '#' : (u || '#');
 
 /* ════════════════════════════════════════════════════════════════════
    Life: reminders, notes, contacts
@@ -389,10 +465,7 @@ function renderLife(){
     el.innerHTML = `<div class="card">${open.length?open.map(remRow).join(''):'<div class="empty">No open reminders.</div>'}</div>
       <button class="btn block" id="newRem">+ New reminder</button>
       ${done.length?`<div class="section"><div class="section-h"><h2>Completed</h2><button class="link" id="clearDone">Clear</button></div><div class="card">${done.map(r=>`<div class="row"><div class="grow" style="text-decoration:line-through;color:var(--text3)">${esc(r.text)}</div></div>`).join('')}</div></div>`:''}`;
-    $('#newRem').onclick = () => openSheet(`<h3>New reminder</h3><label>What</label><input id="rText"><label>When</label><input id="rDue" type="datetime-local">
-      <div class="btns"><button class="btn ghost" onclick="closeSheet()">Cancel</button><button class="btn" id="rSave">Save</button></div>`, s => {
-        s.querySelector('#rSave').onclick = () => { const t=$('#rText').value.trim(); if(!t) return; const d=$('#rDue').value; tools.add_reminder({text:t, due:d?new Date(d).toISOString():''}); closeSheet(); renderLife(); };
-      });
+    $('#newRem').onclick = () => remSheet(null);
     const cd = $('#clearDone'); if(cd) cd.onclick = () => { S.reminders = S.reminders.filter(r=>!r.done); save(); renderLife(); };
   } else if(lifeSeg === 'notes'){
     el.innerHTML = `<form class="ask" id="noteForm"><input id="noteIn" placeholder="Quick note…"><button class="icon-btn primary">+</button></form>
@@ -569,27 +642,29 @@ async function callAnthropic(bot, messages){
   return {role:'assistant', content:text, ...(calls.length ? {tool_calls:calls} : {})};
 }
 function safeJSON(s){ try{ return typeof s === 'string' ? JSON.parse(s || '{}') : (s || {}); }catch(e){ return {}; } }
-const callBot = (bot, msgs) => (PROVIDERS[bot.provider]?.kind === 'anthropic' ? callAnthropic : callOpenAI)(bot, msgs);
+const callBot = (bot, msgs) => bot.provider === 'demo' ? callDemo(msgs) : (PROVIDERS[bot.provider]?.kind === 'anthropic' ? callAnthropic : callOpenAI)(bot, msgs);
 
 /* ════════════════════════════════════════════════════════════════════
    Chat
    ════════════════════════════════════════════════════════════════════ */
 let busy = false;
-function activeBot(){ const id = $('#botPick').value || S.defaultBot; return S.bots.find(b=>b.id===id) || S.bots[0]; }
+function activeBot(){ const id = $('#botPick').value || S.defaultBot || 'demo'; return id === 'demo' ? DEMO_BOT : (S.bots.find(b => b.id === id) || DEMO_BOT); }
 
 function renderChat(){
   const pick = $('#botPick');
-  pick.innerHTML = S.bots.length ? S.bots.map(b => `<option value="${b.id}" ${b.id===(pick.dataset.sel||S.defaultBot)?'selected':''}>${esc(b.name)} · ${esc(b.model)}</option>`).join('') : '<option value="">No bot connected</option>';
+  const sel = pick.dataset.sel || S.defaultBot || 'demo';
+  pick.innerHTML = S.bots.map(b => `<option value="${b.id}" ${b.id===sel?'selected':''}>${esc(b.name)} · ${esc(b.model)}</option>`).join('')
+    + `<option value="demo" ${sel==='demo'?'selected':''}>Orbit Demo · on-device</option>`;
   const el = $('#msgs');
   let html = '';
-  if(!S.chat.length) html += `<div class="msg sys">${S.bots.length ? 'Ask me to call, text, remind, navigate, play, note…' : 'Connect a bot in the Bots tab to get started.'}</div>`;
+  if(!S.chat.length) html += `<div class="msg sys">Ask Orbit to remind, text, call, navigate, play or take a note.<br>Try “Plan my day” or “Remind me to stretch in 20 minutes”.${activeBot().id === 'demo' ? '<br>You’re using the on-device demo assistant.' : ''}</div>`;
   S.chat.forEach((m, i) => {
     if(m.role === 'user') html += `<div class="msg user">${esc(m.content)}</div>`;
-    else if(m.role === 'assistant' && m.content) html += `<div class="msg bot">${esc(m.content)}</div>`;
+    else if(m.role === 'assistant' && m.content) html += `<div class="msg bot">${md(m.content)}</div>`;
     if(m.actions) html += m.actions.map((a, j) => actionCard(a, i, j)).join('');
     if(m.error) html += `<div class="msg err">${esc(m.error)}</div>`;
   });
-  if(busy) html += '<div class="typing">Thinking…</div>';
+  if(busy) html += '<div class="typing" aria-label="Thinking"><span></span><span></span><span></span></div>';
   el.innerHTML = html;
   el.scrollTop = el.scrollHeight;
 }
@@ -604,7 +679,7 @@ $('#msgs').addEventListener('click', async e => {
   const [i, j] = r.dataset.run.split(':').map(Number);
   const a = S.chat[i]?.actions?.[j]; if(!a || a.done) return;
   r.disabled = true; r.textContent = '…';
-  try{ a.result = await RUNNERS[a.run.kind](a.run.payload || {}); a.done = true; save(); }
+  try{ a.result = await RUNNERS[a.run.kind](a.run.payload || {}); a.done = true; navigator.vibrate?.(10); save(); }
   catch(err){ toast(err instanceof ReauthError ? 'Sign-in expired. Reconnect it in the Bots tab.' : (err.message || String(err))); }
   renderChat();
 });
@@ -618,7 +693,6 @@ async function send(text){
   if(busy || !text.trim()) return;
   const bot = activeBot();
   S.chat.push({role:'user', content:text.trim()});
-  if(!bot){ S.chat.push({role:'assistant', content:'', error:'No bot connected yet. Open the Bots tab and connect Grok, ChatGPT, Claude, or any OpenAI-compatible service.'}); save(); renderChat(); return; }
   busy = true; renderChat();
   try{
     for(let step = 0; step < 6; step++){
@@ -646,7 +720,9 @@ async function send(text){
     }
   }catch(err){
     let msg = err.message || String(err);
-    if(/Failed to fetch|NetworkError|Load failed/i.test(msg)) msg = `Couldn't reach ${bot.name}. Check the key and URL — some providers block direct browser requests (CORS); the Android shell or a small proxy solves that.`;
+    if(/Failed to fetch|NetworkError|Load failed|Content Security/i.test(msg)) msg = PREVIEW
+      ? `This preview can't reach ${bot.name}, because hosted previews block outside connections. Switch to Orbit Demo at the top, or run Orbit from your own site.`
+      : `Couldn't reach ${bot.name}. Check the API key and URL. Some providers block requests sent straight from a browser; the Android app or a small proxy gets around that.`;
     S.chat.push({role:'assistant', content:'', error:msg});
   }
   if(S.chat.length > 120) S.chat = S.chat.slice(-120);
@@ -685,28 +761,45 @@ function renderBots(){
     return `<div class="row bot"><div class="av" style="color:${p.color}">${esc(b.name.slice(0,2).toUpperCase())}</div>
       <div class="grow"><div>${esc(b.name)} ${b.id===S.defaultBot?'<span class="pill on">default</span>':''}</div><div class="sub">${esc(p.label)} · ${esc(b.model)}</div></div>
       <button class="link" data-editbot="${b.id}">Edit</button></div>`;
-  }).join('') : '<div class="empty">No bots yet. Tap “+ Connect”.</div>';
+  }).join('') : '<div class="empty">No AI bots connected. Orbit Demo, the on-device assistant, is answering for now.</div>';
   document.querySelectorAll('[data-editbot]').forEach(x => x.onclick = () => botSheet(S.bots.find(b=>b.id===x.dataset.editbot)));
   renderServices();
   $('#setName').value = S.name; $('#setSpeak').checked = S.speak;
   $('#setNotif').textContent = !('Notification' in window) ? 'Unsupported' : Notification.permission === 'granted' ? 'On' : 'Enable';
+  $('#setTheme').value = S.theme || '';
+  $('#rowNotif').hidden = $('#rowBackup').hidden = PREVIEW;
   $('#platformNote').innerHTML = NATIVE
     ? 'Running inside the Orbit Android launcher: installed apps appear on Home and the assistant can open them.'
+    : PREVIEW ? 'This is a hosted preview. It runs the demo assistant and keeps everything on this device, but it can’t reach outside services, use the microphone or send notifications. Run Orbit from your own site, or install the Android app, to connect Grok, Google and Spotify.'
     : 'Tip: “Add to Home Screen” runs Orbit full-screen. To make Orbit the phone’s actual home screen with access to every installed app, use the Android launcher build (see README).';
 }
 $('#addBot').onclick = () => botSheet(null);
+let themeSet = !!S.theme;
+function applyTheme(){
+  const root = document.documentElement;
+  if(S.theme){ root.dataset.theme = S.theme; themeSet = true; }
+  else if(themeSet){ root.removeAttribute('data-theme'); themeSet = false; }
+}
+$('#setTheme').onchange = e => { S.theme = e.target.value; applyTheme(); save(); };
+function previewOnly(what){
+  openSheet(`<h3>${what} needs the full app</h3>
+    <p class="note" style="font-size:14px;color:var(--text2)">Hosted previews block connections to outside services, so ${what.toLowerCase()} can’t work here. Everything else, including the demo assistant, works normally.</p>
+    <p class="note">To use it, host the <b>orbit/web</b> folder on any HTTPS site (GitHub Pages works) or install the Android app. The README explains both.</p>
+    <div class="btns"><button class="btn" id="pvOk">Got it</button></div>`, s => s.querySelector('#pvOk').onclick = closeSheet);
+}
 $('#setName').onchange = e => { S.name = e.target.value.trim(); save(); };
 $('#setSpeak').onchange = e => { S.speak = e.target.checked; save(); };
 $('#setNotif').onclick = async () => { if('Notification' in window){ await Notification.requestPermission(); renderBots(); } };
 
 function botSheet(bot){
+  if(PREVIEW) return previewOnly('Connecting an AI bot');
   const b = bot || {provider:'xai', name:'Grok', base:PROVIDERS.xai.base, model:PROVIDERS.xai.model, key:''};
   openSheet(`<h3>${bot?'Edit bot':'Connect a bot'}</h3>
-    <label>Provider</label><select id="bProv">${Object.entries(PROVIDERS).map(([k,p])=>`<option value="${k}" ${k===b.provider?'selected':''}>${esc(p.label)}</option>`).join('')}</select>
-    <label>Display name</label><input id="bName" value="${esc(b.name)}">
-    <label>API base URL</label><input id="bBase" value="${esc(b.base)}" placeholder="https://…/v1">
-    <label>Model</label><input id="bModel" value="${esc(b.model)}">
-    <label>API key</label><input id="bKey" type="password" value="${esc(b.key)}" placeholder="Stored only on this device" autocomplete="off">
+    <label for="bProv">Provider</label><select id="bProv">${Object.entries(PROVIDERS).map(([k,p])=>`<option value="${k}" ${k===b.provider?'selected':''}>${esc(p.label)}</option>`).join('')}</select>
+    <label for="bName">Display name</label><input id="bName" value="${esc(b.name)}">
+    <label for="bBase">API base URL</label><input id="bBase" value="${esc(b.base)}" placeholder="https://…/v1">
+    <label for="bModel">Model</label><input id="bModel" value="${esc(b.model)}">
+    <label for="bKey">API key</label><input id="bKey" type="password" value="${esc(b.key)}" placeholder="Stored only on this device" autocomplete="off">
     <p class="note">Get keys from the provider’s developer console (e.g. console.x.ai for Grok). Model names change often; use whatever the provider currently lists. “Custom” covers OpenRouter, Groq, Together, Mistral, local Ollama (<code>http://localhost:11434/v1</code>) and similar.</p>
     <div class="btns"><button class="btn ghost" id="bTest">Test</button><button class="btn" id="bSave">Save</button></div>
     ${bot?`<div class="btns"><button class="btn ghost" id="bDef">Make default</button><button class="btn danger" id="bDel">Remove</button></div>`:''}`, s => {
@@ -1001,6 +1094,7 @@ function renderServices(){
   document.querySelectorAll('[data-svc]').forEach(b => b.onclick = () => serviceSheet(b.dataset.svc));
 }
 function serviceSheet(kind){
+  if(PREVIEW) return previewOnly(kind === 'google' ? 'Google Calendar and Gmail' : 'Spotify');
   const isG = kind === 'google', cfg = isG ? G() : SP();
   const linked = isG ? !!cfg.token : !!cfg.refresh;
   if(isG) loadGIS().catch(() => {});            // preload so the sign-in popup opens straight from the tap
@@ -1016,7 +1110,7 @@ function serviceSheet(kind){
     <li>Playing and skipping songs remotely needs <b>Spotify Premium</b>; searching works on any plan.</li>`;
   openSheet(`<h3>${isG ? 'Google Calendar &amp; Gmail' : 'Spotify'}</h3>
     <ol class="note" style="padding-left:18px">${steps}</ol>
-    <label>Client ID</label><input id="svcId" value="${esc(cfg.clientId || '')}" autocomplete="off">
+    <label for="svcId">Client ID</label><input id="svcId" value="${esc(cfg.clientId || '')}" autocomplete="off">
     <p class="note">${isG ? 'Grants: view &amp; edit calendar events, read email, send email. Sign-in lasts about an hour; Orbit asks you to reconnect when it expires.' : 'Grants: see and control playback.'} Tokens stay on this device.</p>
     <div class="btns"><button class="btn ghost" id="svcClose">Close</button><button class="btn" id="svcGo">${linked ? 'Reconnect' : 'Save &amp; connect'}</button></div>
     ${linked ? '<div class="btns"><button class="btn danger" id="svcOff">Disconnect</button></div>' : ''}`, s => {
@@ -1029,6 +1123,198 @@ function serviceSheet(kind){
       };
       const off = s.querySelector('#svcOff');
       if(off) off.onclick = () => { if(isG) googleDisconnect(); else { delete cfg.refresh; delete cfg.access; delete cfg.exp; save(); } liveCache.t = 0; closeSheet(); renderBots(); };
+  });
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   Orbit Demo: a built-in assistant that runs on the device with no
+   API key. It understands common phone commands and drives the same
+   tools a connected AI bot uses.
+   ════════════════════════════════════════════════════════════════════ */
+const DEMO_BOT = {id:'demo', name:'Orbit Demo', model:'on-device', provider:'demo'};
+const DEMO_HELP = `I'm the built-in demo assistant. I run on this phone and understand short commands like:
+• Remind me to stretch in 20 minutes
+• Text Alex I'm running late
+• Call Mom
+• Note: buy AA batteries
+• Directions to the airport
+• Play lo-fi beats
+• What's on today?
+
+For open-ended conversation, connect Grok, ChatGPT or Claude in **Bots**.`;
+const capFirst = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+
+// Pull a date/time out of free text. Returns {date, rest} where rest is the text without the time words.
+function parseWhen(s){
+  const now = new Date();
+  let t = ' ' + s + ' ', d = null, day = null, m;
+  if((m = t.match(/\s+in\s+(half an|an?|\d+)\s*(min(?:ute)?s?|hours?|hrs?)\b/i))){
+    const mins = /half/i.test(m[1]) ? 30 : (/^an?$/i.test(m[1]) ? 1 : +m[1]) * (/^h/i.test(m[2]) ? 60 : 1);
+    d = new Date(now.getTime() + mins * 60000); t = t.replace(m[0], ' ');
+  }
+  if(/\btomorrow\b/i.test(t)){ day = 1; t = t.replace(/\s*\btomorrow\b/i, ' '); }
+  else if(/\btonight\b/i.test(t)){ day = 0; t = t.replace(/\s*\btonight\b/i, ' '); }
+  else if(/\btoday\b/i.test(t)){ day = 0; t = t.replace(/\s*\btoday\b/i, ' '); }
+  const days = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+  if((m = t.match(/\s+(?:on\s+)?(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/i))){
+    day = (days.indexOf(m[1].toLowerCase()) - now.getDay() + 7) % 7 || 7; t = t.replace(m[0], ' ');
+  }
+  m = t.match(/\s+(?:at|by|@)\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm|a\.m\.|p\.m\.)?(?=\s|$)/i)
+   || t.match(/\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)(?=\s|$)/i)
+   || t.match(/\s+(?:at\s+)?(noon|midnight)\b/i);
+  if(m && !d){
+    let h, mi = 0;
+    if(/noon/i.test(m[1])) h = 12; else if(/midnight/i.test(m[1])) h = 0;
+    else{
+      h = +m[1]; mi = +(m[2] || 0);
+      const ap = (m[3] || '').toLowerCase();
+      if(ap.startsWith('p') && h < 12) h += 12;
+      if(ap.startsWith('a') && h === 12) h = 0;
+      if(!ap && h < 8) h += 12;                         // "at 6" means 6pm
+    }
+    if(h < 24 && mi < 60){
+      d = new Date(now); d.setDate(now.getDate() + (day || 0)); d.setHours(h, mi, 0, 0);
+      if(day == null && d < now) d.setDate(d.getDate() + 1);
+      t = t.replace(m[0], ' ');
+    }
+  } else if(day != null && !d){
+    d = new Date(now); d.setDate(now.getDate() + day); d.setHours(day === 0 ? 20 : 9, 0, 0, 0);
+  }
+  return {date:d, rest:t.replace(/\s+/g, ' ').trim()};
+}
+
+function demoParse(s){
+  const L = s.trim().replace(/[.!?]+$/, '');
+  let m;
+  if(/^(?:what(?:'|’)?s|what is|what do i have)\b.*\b(?:today|schedule|agenda|plan|on)\b|^plan my day|^my day$|^(?:show )?(?:my )?agenda$/i.test(L)) return {name:'__agenda'};
+  if((m = L.match(/^(?:please\s+)?remind me(?:\s+to)?\s+(.+)/i)) || (m = L.match(/^(?:set|add|create)\s+(?:a\s+)?reminder(?:\s+to|\s+for)?\s+(.+)/i))){
+    const w = parseWhen(m[1]);
+    return {name:'add_reminder', args:{text:capFirst(w.rest), due:w.date ? w.date.toISOString() : ''}};
+  }
+  if((m = L.match(/^(?:note|jot down|write down|remember)(?:\s+that)?\s*[:\-]?\s+(.+)/i)) || (m = L.match(/^(?:add|take|make)\s+(?:a\s+)?note\s*[:\-]?\s*(?:that\s+)?(.+)/i)))
+    return {name:'add_note', args:{text:capFirst(m[1])}};
+  if((m = L.match(/^(?:text|message|sms)\s+(?:my\s+)?(.+?)(?:\s+(?:that|saying|to say)\s+|\s*:\s*|,\s*)(.+)/i)) || (m = L.match(/^(?:text|message|sms)\s+(?:my\s+)?(\S+)\s+(.+)/i)))
+    return {name:'send_text', args:{to:m[1], body:capFirst(m[2])}};
+  if((m = L.match(/^(?:call|phone|ring|dial|facetime)\s+(?:my\s+)?(.+)/i))) return {name:'call', args:{to:m[1]}};
+  if((m = L.match(/^(?:email|e-mail|mail)\s+(?:my\s+)?(.+?)(?:\s+(?:about|saying|that|re)\s+|\s*:\s*)(.+)/i)))
+    return {name:googleLinked() ? 'gmail_send' : 'send_email', args:{to:m[1], subject:capFirst(m[2]).slice(0, 70), body:capFirst(m[2])}};
+  if((m = L.match(/^(?:directions|navigate|take me|drive|walk|get me|how do i get)\s+(?:me\s+)?(?:to\s+)?(?:the\s+)?(.+)/i))) return {name:'navigate', args:{destination:m[1]}};
+  if(/^(?:pause|stop)(?:\s+the)?(?:\s+music)?$/i.test(L)) return SP().refresh ? {name:'spotify_control', args:{action:'pause'}} : null;
+  if(/^(?:resume|unpause)(?:\s+the)?(?:\s+music)?$/i.test(L)) return SP().refresh ? {name:'spotify_control', args:{action:'resume'}} : null;
+  if(/^(?:next|skip)(?:\s+(?:song|track))?$/i.test(L)) return SP().refresh ? {name:'spotify_control', args:{action:'next'}} : null;
+  if((m = L.match(/^play\s+(?:some\s+|me\s+some\s+)?(.+)/i))){
+    const q = m[1].replace(/\s+on spotify$/i, '');
+    return SP().refresh ? {name:'spotify_play', args:{query:q}}
+      : {name:'open_url', args:{url:'https://open.spotify.com/search/' + encodeURIComponent(q), label:'Play “' + q + '” on Spotify'}};
+  }
+  if((m = L.match(/^(?:open|launch|start|go to)\s+(?:the\s+|my\s+)?(.+?)(?:\s+app)?$/i))) return {name:'open_app', args:{name:m[1]}};
+  if((m = L.match(/^(?:search(?:\s+for)?|google|look up|find)\s+(.+)/i)))
+    return {name:'open_url', args:{url:'https://www.google.com/search?q=' + encodeURIComponent(m[1]), label:'Search “' + m[1] + '”'}};
+  if(/^(?:show\s+|read\s+|what are\s+)?(?:my\s+)?notes$/i.test(L)) return {name:'search_notes', args:{}};
+  if(/^(?:show\s+|list\s+|what are\s+)?(?:my\s+)?reminders$/i.test(L)) return {name:'list_reminders', args:{}};
+  if(/^(?:hi|hey|hello|yo|help|what can you do)\b/i.test(L)) return {name:'__help'};
+  return null;
+}
+
+function demoPlan(text){
+  const parts = text.split(/\s*(?:;|\.\s+|,?\s+and then\s+|,?\s+then\s+|,?\s+and\s+(?=(?:text|message|call|email|remind|open|play|note|navigate|directions|take me|search|look up)\b))\s*/i).filter(Boolean);
+  const calls = [], skipped = [];
+  let help = false;
+  for(const p of parts){
+    const c = demoParse(p);
+    if(!c) skipped.push(p);
+    else if(c.name === '__help') help = true;
+    else if(c.name === '__agenda'){ calls.push({name:'list_reminders', args:{}}); if(googleLinked()) calls.push({name:'calendar_events', args:{}}); }
+    else calls.push(c);
+  }
+  return {calls, skipped, help};
+}
+
+const demoTime = iso => iso && iso.length > 10 ? new Date(iso).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}) : 'All day';
+function demoSummary(name, args, res){
+  if(res && res.error){
+    if(/phone number|email/i.test(res.error)) return `I don't have contact details for **${args.to}**. Add them in Life → Contacts and try again.`;
+    if(/No app named/i.test(res.error)) return `I couldn't find an app called **${args.name}**. Add it from Home → Apps → Add.`;
+    if(/not signed in/i.test(res.error)) return res.error.replace(/ask the user to tap it and then try again/i, 'tap it, then ask again');
+    return res.error;
+  }
+  switch(name){
+    case 'add_reminder': return `Reminder set: **${args.text}** · ${res.due === 'no time' ? 'no time set' : res.due}.`;
+    case 'add_note': return 'Saved to your notes.';
+    case 'send_text': return `Your text to ${capFirst(args.to)} is ready. Tap **Send** to open Messages.`;
+    case 'call': return `Tap **Call** to ring ${capFirst(args.to)}.`;
+    case 'send_email': return `Your email to ${capFirst(args.to)} is ready. Tap **Send** to open your mail app.`;
+    case 'gmail_send': return `Tap **Send** to email ${capFirst(args.to)} from Gmail.`;
+    case 'navigate': return `Directions to ${args.destination} are ready.`;
+    case 'open_app': return `Tap **Open** to launch ${capFirst(args.name)}.`;
+    case 'open_url': return 'Tap **Open** to continue.';
+    case 'spotify_play': return `Playing **${res.playing}**${res.by ? ' by ' + res.by : ''}.`;
+    case 'spotify_control': return 'Done.';
+    case 'list_reminders':
+      return res.length ? '**Reminders**\n' + res.map(r => `• ${r.text}${r.due ? ' · ' + r.due : ''}`).join('\n') : 'No open reminders.';
+    case 'calendar_events':
+      return res.length ? '**Calendar**\n' + res.map(e => `• ${e.title} · ${demoTime(e.start)}`).join('\n') : 'Your calendar is clear for the rest of today.';
+    case 'search_notes':
+      return res.length ? '**Notes**\n' + res.map(n => `• ${n.text}`).join('\n') : 'No notes yet. Try “Note: …”.';
+    default: return '';
+  }
+}
+
+async function callDemo(messages){
+  await new Promise(r => setTimeout(r, 420));
+  const last = messages[messages.length - 1];
+  if(last.role === 'user'){
+    const {calls, skipped, help} = demoPlan(last.content);
+    if(!calls.length) return {role:'assistant', content: help || !skipped.length ? DEMO_HELP : `I didn't catch that. ${DEMO_HELP}`};
+    demoPending = skipped;
+    return {role:'assistant', content:'', tool_calls:calls.map(c => ({id:'d' + uid(), type:'function', function:{name:c.name, arguments:JSON.stringify(c.args || {})}}))};
+  }
+  const lastA = [...messages].reverse().find(m => m.role === 'assistant' && m.tool_calls);
+  const results = {};
+  messages.filter(m => m.role === 'tool').forEach(m => { results[m.tool_call_id] = safeJSON(m.content); });
+  let lines = lastA.tool_calls.map(tc => demoSummary(tc.function.name, safeJSON(tc.function.arguments), results[tc.id])).filter(Boolean);
+  const agenda = lastA.tool_calls.every(tc => ['list_reminders','calendar_events'].includes(tc.function.name));
+  if(agenda && lines.every(l => /^No open|clear/.test(l))) lines = ['Your day is clear. Try “Remind me to call Mom at 6pm”.'];
+  if(demoPending.length) lines.push(`I skipped “${demoPending.join('”, “')}” because I didn't understand it.`);
+  demoPending = [];
+  return {role:'assistant', content:lines.join('\n')};
+}
+let demoPending = [];
+
+// Minimal, safe Markdown for bot replies: escape first, then add bold, italics, code, bullets and links.
+function md(t){
+  return esc(t)
+    .replace(/```(?:\w+)?\n?([\s\S]*?)```/g, (m, c) => `<pre>${c.trim()}</pre>`)
+    .replace(/`([^`\n]+)`/g, '<code>$1</code>')
+    .replace(/^\s*[-*] (.+)$/gm, '• $1')
+    .replace(/^#{1,4} (.+)$/gm, '<b>$1</b>')
+    .replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>')
+    .replace(/(^|[\s(])\*([^*\n]+)\*(?=[\s).,!?]|$)/g, '$1<i>$2</i>')
+    .replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+    .replace(/(^|[\s(])(https?:\/\/[^\s<]+[^\s<.,;:!?)])/g, '$1<a href="$2" target="_blank" rel="noopener">$2</a>');
+}
+
+/* ── first run ── */
+const ORBIT_MARK = '<svg viewBox="0 0 512 512" aria-hidden="true"><circle cx="256" cy="256" r="78" fill="var(--accent)"/><ellipse cx="256" cy="256" rx="170" ry="70" fill="none" stroke="var(--accent)" stroke-width="22" transform="rotate(-28 256 256)"/><circle cx="404" cy="178" r="22" fill="var(--sun)"/></svg>';
+function seedSamples(){
+  if(!S.contacts.length) S.contacts.push(
+    {id:uid(), name:'Mom', phone:'+1 555 0100', email:'', sample:true},
+    {id:uid(), name:'Alex', phone:'+1 555 0101', email:'alex@example.com', sample:true});
+  if(!S.reminders.length){
+    const d = new Date(); d.setHours(Math.max(d.getHours() + 2, 18), 0, 0, 0);
+    S.reminders.push({id:uid(), text:'Water the plants', due:d.toISOString(), done:false, notified:false});
+  }
+  if(!S.notes.length) S.notes.push({id:uid(), text:'Gift ideas for Alex: hiking socks, a good thermos', at:new Date().toISOString()});
+}
+function onboard(){
+  openSheet(`<div class="welcome-mark">${ORBIT_MARK}</div><h3>Welcome to Orbit</h3>
+    <p class="note" style="font-size:14px;color:var(--text2)">One home screen for your whole phone. Tell Orbit what you need and it sets reminders, gets texts and calls ready, plans your day and opens your apps.</p>
+    <label for="obName">What should Orbit call you?</label><input id="obName" placeholder="First name" autocomplete="given-name">
+    <div class="btns"><button class="btn" id="obDemo">Start with the demo</button>${PREVIEW ? '' : '<button class="btn ghost" id="obBot">Connect my AI</button>'}</div>
+    <p class="note">The demo assistant runs on this phone and needs no account. It adds two sample contacts (Mom and Alex, with 555 numbers), a reminder and a note so you can try things straight away.</p>`, s => {
+      const finish = () => { S.name = $('#obName').value.trim(); S.onboarded = true; seedSamples(); save(); closeSheet(); renderHome(); };
+      s.querySelector('#obDemo').onclick = finish;
+      const ob = s.querySelector('#obBot'); if(ob) ob.onclick = () => { finish(); go('bots'); botSheet(null); };
   });
 }
 
@@ -1053,12 +1339,16 @@ function checkReminders(){
    Boot
    ════════════════════════════════════════════════════════════════════ */
 if(NATIVE && NATIVE.listApps){ try{ nativeApps = JSON.parse(NATIVE.listApps()); }catch(e){ nativeApps = null; } }
+$('#homeMark').innerHTML = ORBIT_MARK;
+applyTheme();
+if(PREVIEW || !SR) document.querySelectorAll('.mic').forEach(b => b.hidden = true);
 handleSpotifyRedirect();
 if(G().clientId) loadGIS().catch(()=>{});
 renderHome();
 setInterval(() => { if($('#view-home').classList.contains('active')) tick(); checkReminders(); }, 15000);
 checkReminders();
-if('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(()=>{});
+if(!S.onboarded) onboard();
+if(!PREVIEW && 'serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(()=>{});
 window.addEventListener('popstate', () => go('home'));
 </script>
 </body>

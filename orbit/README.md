@@ -15,9 +15,20 @@ cd orbit/web && python3 -m http.server 8080
 # open http://localhost:8080 — on a phone, host it over HTTPS and "Add to Home Screen"
 ```
 
+On first launch, Orbit asks your name and starts with **Orbit Demo**. This assistant is built in and runs entirely on the phone, so you need no account or key. It understands short commands such as "Remind me to stretch in 20 minutes", "Text Alex I'm running late", "Directions to the airport", "Play lo-fi beats" and "What's on today?". It also adds two sample contacts with fictional 555 numbers, a reminder and a note, so you can try things straight away.
+
+To get full conversation:
+
 1. **Bots** tab → **+ Connect** → choose a provider and paste an API key (for Grok, get one at console.x.ai).
 2. **Life → Contacts**: add people so "text Mom" works. Android Chrome can import them from the phone.
 3. Ask from the Home bar or the Assistant tab.
+
+## Polish details
+
+- Light and dark themes (match the system, or choose one in Settings).
+- Formatted assistant replies, a typing indicator, and tap-to-edit reminders.
+- App tiles are real links, and controls have labels and visible keyboard focus.
+- Animations turn off when the phone asks for reduced motion.
 
 ## How it works
 

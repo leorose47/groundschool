@@ -1,5 +1,5 @@
 // Offline shell cache. API calls to bots always go to the network.
-const CACHE = 'orbit-v1';
+const CACHE = 'orbit-v2';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL))); self.skipWaiting(); });
 self.addEventListener('activate', e => {
