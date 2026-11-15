@@ -519,3 +519,19 @@ a.how-step p { color: #bdbdbb; }
 .example-label { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: #9a9a98; margin-bottom: 8px; }
 .stack-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .stack-tags span { font-size: 12px; padding: 4px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,.18); color: #d6d6d4; }
+
+/* Survey: sections, name field, building screen, profile */
+.q-section { display: inline-block; color: var(--ink); font-weight: 600; margin-right: 8px; padding-right: 10px; border-right: 1px solid var(--line); }
+.q-text { width: 100%; max-width: 420px; height: 56px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); padding: 0 18px; font: inherit; font-size: 17px; color: var(--ink); }
+.q-text:focus { outline: 2px solid var(--ink); outline-offset: 1px; }
+.building { padding: 72px 48px; text-align: center; }
+.building h3 { font-size: clamp(26px, 3vw, 34px); font-weight: 300; margin: 22px 0 22px; }
+.building ul { list-style: none; padding: 0; margin: 0 auto; display: inline-grid; gap: 10px; text-align: left; font-size: 15px; color: var(--ink-2); }
+.building li { opacity: 0; animation: tick .4s ease forwards; padding-left: 26px; position: relative; }
+.building li::before { content: "✓"; position: absolute; left: 0; color: var(--ink); font-weight: 700; }
+@keyframes tick { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.spinner { width: 36px; height: 36px; margin: 0 auto; border-radius: 50%; border: 2px solid var(--line); border-top-color: var(--ink); animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.profile { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px !important; }
+.profile span { font-size: 12px; padding: 4px 10px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); }
+@media (max-width: 700px) { .building { padding: 56px 20px; } }

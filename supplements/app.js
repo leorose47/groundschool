@@ -279,7 +279,7 @@
 
     const body = $("#cartItems");
     if (!cart.length) {
-      body.innerHTML = `<div class="empty"><h4>Your cart is empty</h4><p>Not sure where to start? The survey takes two minutes and builds your bundle for you.</p><a href="#quiz" class="btn btn-primary btn-sm" data-close>Take the survey</a></div>`;
+      body.innerHTML = `<div class="empty"><h4>Your cart is empty</h4><p>Not sure where to start? The 10-question survey builds your bundle for you.</p><a href="#quiz" class="btn btn-primary btn-sm" data-close>Take the survey</a></div>`;
       $("#cartFoot").innerHTML = "";
       return;
     }
@@ -475,7 +475,8 @@
 
   /* ───────────────────────── Quiz ───────────────────────── */
   const QUESTIONS = [
-    { name: "goals", type: "checkbox", max: 3, title: "What are you working on?", help: "Pick up to three. We'll prioritize in that order.", cols: 2, options: [
+    { name: "name", type: "text", section: "About you", optional: true, title: "First, what should we call you?", help: "Optional. Just so your bundle feels like yours.", placeholder: "First name" },
+    { name: "goals", type: "checkbox", section: "Goals", max: 3, title: "What are you working on{name}?", help: "Pick up to three. We'll prioritize in that order.", cols: 2, options: [
       ["strength", "Build strength & muscle", "Lifting, sport, getting stronger"],
       ["energy", "More daily energy", "Fewer afternoon slumps"],
       ["sleep", "Sleep deeper", "Fall asleep faster, wake up rested"],
@@ -485,28 +486,40 @@
       ["recovery", "Recover faster", "Less soreness between sessions"],
       ["essentials", "Cover nutritional gaps", "A solid daily baseline"],
     ] },
-    { name: "age", type: "radio", title: "How old are you?", help: "Nutrient needs shift with age.", cols: 4, options: [
+    { name: "age", type: "radio", section: "About you", title: "How old are you?", help: "Nutrient needs shift with age.", cols: 4, options: [
       ["u30", "Under 30"], ["30s", "30–39"], ["40s", "40–49"], ["50p", "50+"],
     ] },
-    { name: "training", type: "radio", title: "How often do you train?", help: "Any structured exercise counts: lifting, running, sport, classes.", cols: 2, options: [
+    { name: "training", type: "radio", section: "Training", title: "How often do you train?", help: "Any structured exercise counts: lifting, running, sport, classes.", cols: 2, options: [
       ["0", "Rarely", "Less than once a week"], ["1", "1–2 days a week", "Staying active"],
       ["3", "3–4 days a week", "Consistent routine"], ["5", "5+ days a week", "Training hard"],
     ] },
-    { name: "sleep", type: "radio", title: "How's your sleep, honestly?", cols: 2, options: [
+    { name: "activity", type: "checkbox", section: "Training", title: "What kind of training do you do?", help: "Select all that apply. Different training burns through different nutrients.", cols: 2, options: [
+      ["lifting", "Lifting & strength", "Weights, calisthenics, CrossFit"],
+      ["cardio", "Running & endurance", "Running, cycling, rowing, swimming"],
+      ["sport", "Team or court sports", "Football, basketball, tennis, BJJ"],
+      ["mobility", "Yoga, mobility or walking", "Lower intensity, done often"],
+    ] },
+    { name: "energy", type: "radio", section: "Energy", title: "When does your energy usually dip{name}?", cols: 2, options: [
+      ["morning", "Mornings", "Slow to get going"], ["afternoon", "Mid-afternoon", "The 3 p.m. slump"],
+      ["allday", "Pretty much all day", "Running on low most of the time"], ["rarely", "Rarely", "Energy's generally good"],
+    ] },
+    { name: "sleep", type: "radio", section: "Sleep & stress", title: "How's your sleep, honestly?", cols: 2, options: [
       ["good", "Solid", "Fall asleep easily, wake up rested"], ["ok", "Hit or miss", "Some good nights, some not"],
       ["poor", "Rough", "Trouble falling or staying asleep"], ["short", "Not enough of it", "Schedule cuts it short"],
     ] },
-    { name: "stress", type: "radio", title: "Day to day, how stressed do you feel?", cols: 4, options: [
+    { name: "stress", type: "radio", section: "Sleep & stress", title: "Day to day, how stressed do you feel?", cols: 4, options: [
       ["low", "Low"], ["mod", "Moderate"], ["high", "High"], ["vhigh", "Very high"],
     ] },
-    { name: "diet", type: "radio", title: "Which best describes how you eat?", cols: 2, options: [
+    { name: "diet", type: "radio", section: "Nutrition", title: "Which best describes how you eat?", cols: 2, options: [
       ["omni", "I eat most things", "Meat, fish, dairy"], ["nofish", "Rarely eat fish", "Fewer than 2 servings a week"],
       ["veg", "Vegetarian", "No meat or fish"], ["vegan", "Vegan", "No animal products"],
     ] },
-    { name: "extras", type: "checkbox", title: "Anything else we should know?", help: "Optional. Select any that apply.", cols: 2, optional: true, options: [
-      ["caffeine", "I'm sensitive to caffeine", "Or already drink a lot of it"],
+    { name: "extras", type: "checkbox", section: "Lifestyle", title: "Last one{name}. Anything else we should know?", help: "Optional. Select any that apply.", cols: 2, optional: true, options: [
+      ["lowprotein", "I don't eat much protein", "Fewer than 3 protein-rich meals a day"],
       ["indoors", "I spend most days indoors", "Limited sun exposure"],
       ["sweat", "I sweat a lot", "Hot climate, long sessions, sauna"],
+      ["alcohol", "I drink 5+ times a week", "Beer, wine or spirits"],
+      ["caffeine", "I'm sensitive to caffeine", "Or already drink a lot of it"],
       ["meds", "I take prescription medication", "We'll flag anything to check with your doctor"],
     ] },
   ];
@@ -517,15 +530,17 @@
   function renderQuiz() {
     form.innerHTML = QUESTIONS.map((q, i) => `
       <fieldset class="quiz-step ${i === 0 ? "active" : ""}" data-step="${i}" aria-labelledby="qt-${i}" style="border:0;margin:0;min-width:0">
-        <p class="q-count">Question ${i + 1} of ${QUESTIONS.length}</p>
-        <h3 class="q-title" id="qt-${i}">${esc(q.title)}</h3>
+        <p class="q-count"><span class="q-section">${esc(q.section)}</span> Question ${i + 1} of ${QUESTIONS.length}</p>
+        <h3 class="q-title" id="qt-${i}" data-tpl="${esc(q.title)}">${esc(q.title.replace("{name}", ""))}</h3>
         ${q.help ? `<p class="q-help">${esc(q.help)}</p>` : `<div style="height:20px"></div>`}
-        <div class="options ${q.cols === 4 ? "cols-4" : ""}">
+        ${q.type === "text"
+          ? `<input class="q-text" type="text" id="q-${q.name}" name="${q.name}" placeholder="${esc(q.placeholder || "")}" maxlength="30" autocomplete="given-name">`
+          : `<div class="options ${q.cols === 4 ? "cols-4" : ""}">
           ${q.options.map(([v, t, s]) => `<div class="opt">
             <input type="${q.type}" id="q-${q.name}-${v}" name="${q.name}" value="${v}">
             <label for="q-${q.name}-${v}"><span class="box"></span><span class="opt-text"><strong>${esc(t)}</strong>${s ? `<small>${esc(s)}</small>` : ""}</span></label>
           </div>`).join("")}
-        </div>
+        </div>`}
         <p class="q-error" aria-live="polite"></p>
         <div class="q-nav">
           <button type="button" class="q-back" data-q="back" ${i === 0 ? "disabled" : ""}>← Back</button>
@@ -537,7 +552,16 @@
 
   function updateBar() { $("#quizBar").style.width = `${(step / QUESTIONS.length) * 100}%`; }
 
-  function values(name) { return $$(`input[name="${name}"]:checked`, form).map(i => i.value); }
+  function values(name) {
+    const text = $(`input[type="text"][name="${name}"]`, form);
+    if (text) { const v = text.value.trim(); return v ? [v] : []; }
+    return $$(`input[name="${name}"]:checked`, form).map(i => i.value);
+  }
+  const firstName = () => (values("name")[0] || "").replace(/\s+/g, " ").slice(0, 30);
+  function personalize() {
+    const n = firstName();
+    $$(".q-title[data-tpl]", form).forEach(h => { h.textContent = h.dataset.tpl.replace("{name}", n ? `, ${n}` : ""); });
+  }
 
   form.addEventListener("change", e => {
     const q = QUESTIONS.find(q => q.name === e.target.name);
@@ -549,6 +573,10 @@
     $(".quiz-step.active .q-error", form).textContent = "";
     // radios auto-advance for a quicker flow
     if (q && q.type === "radio") setTimeout(() => go(1), 220);
+  });
+
+  form.addEventListener("keydown", e => {
+    if (e.key === "Enter" && e.target.matches(".q-text")) { e.preventDefault(); go(1); }
   });
 
   form.addEventListener("click", e => {
@@ -565,17 +593,21 @@
     }
     if (dir > 0 && step === QUESTIONS.length - 1) { showResult(); return; }
     step = Math.max(0, Math.min(QUESTIONS.length - 1, step + dir));
+    personalize();
     $$(".quiz-step", form).forEach((el, i) => el.classList.toggle("active", i === step));
     updateBar();
+    const t = $(".quiz-step.active .q-text", form); if (t) t.focus({ preventScroll: true });
   }
 
   function recommend(a) {
     const goals = a.goals;
     const has = g => goals.includes(g);
     const w = g => { const i = goals.indexOf(g); return i < 0 ? 0 : [1.3, 1.15, 1][i]; }; // first pick weighs most
-    const ex = a.extras;
+    const ex = a.extras || [];
+    const act = a.activity || [];
     const training = +a.training[0];
     const sleep = a.sleep[0], stress = a.stress[0], diet = a.diet[0], age = a.age[0];
+    const energy = (a.energy || [])[0];
 
     const r = {}; // id -> { score, why: [] }
     const add = (id, pts, why) => { (r[id] ||= { score: 0, why: [] }); r[id].score += pts; if (why) r[id].why.push(why); };
@@ -585,6 +617,8 @@
     if (ex.includes("indoors")) add("foundation", 2, "you're <b>mostly indoors</b>, so vitamin D matters more");
     if (diet === "vegan" || diet === "veg") add("foundation", 1, `B12 is hard to get on a <b>${diet === "vegan" ? "vegan" : "vegetarian"}</b> diet`);
     if (age === "40s" || age === "50p") add("foundation", 1, "zinc and D3 needs rise <b>after 40</b>");
+    if (energy === "allday") add("foundation", 2, "being <b>low on energy all day</b> can point to gaps in D3 and B12");
+    if (ex.includes("alcohol")) add("foundation", 1, "regular <b>alcohol</b> depletes B vitamins and zinc");
 
     // Omega (fish oil: not for vegetarians/vegans)
     if (diet !== "veg" && diet !== "vegan") {
@@ -593,6 +627,7 @@
       if (has("focus")) add("omega", 1.5 * w("focus"), "DHA supports <b>brain function</b>");
       if (has("recovery")) add("omega", 1.5 * w("recovery"), "omega-3s support <b>recovery</b>");
       if (age === "50p" || age === "40s") add("omega", 1);
+      if (act.includes("cardio")) add("omega", 1, "omega-3s support joints under <b>endurance training</b>");
     }
 
     // Creatine
@@ -600,6 +635,8 @@
     if (training >= 3) add("creatine", 2, `you train <b>${training === 5 ? "5+" : "3–4"} days a week</b>`);
     if (has("focus")) add("creatine", 1 * w("focus"));
     if (has("recovery")) add("creatine", 1 * w("recovery"));
+    if (act.includes("lifting")) add("creatine", 2, "you <b>lift</b>, where creatine has the strongest evidence");
+    if (act.includes("sport")) add("creatine", 1, "it supports repeated sprints in <b>sport</b>");
 
     // Magnesium
     if (has("sleep")) add("magnesium", 2.5 * w("sleep"), "it supports <b>restful sleep</b>");
@@ -607,6 +644,8 @@
     if (has("stress")) add("magnesium", 1.5 * w("stress"));
     if (training >= 5 || ex.includes("sweat")) add("magnesium", 1, "you lose more magnesium through <b>sweat</b>");
     if (sleep === "poor" || sleep === "ok") add("magnesium", 1);
+    if (act.includes("cardio") || act.includes("sport")) add("magnesium", 1, "<b>endurance and sport</b> raise magnesium needs");
+    if (ex.includes("alcohol")) add("magnesium", 1.5, "<b>alcohol</b> depletes magnesium");
 
     // Ashwagandha (skip if meds: flag instead)
     if (has("stress")) add("ashwagandha", 4 * w("stress"), "you want to <b>handle stress better</b>");
@@ -618,23 +657,31 @@
       if (has("strength")) add("protein", 3 * w("strength"), "hitting your <b>protein target</b> drives muscle growth");
       if (has("recovery")) add("protein", 1.5 * w("recovery"));
       if (training >= 3) add("protein", 1);
+      if (act.includes("lifting")) add("protein", 1.5);
+      if (ex.includes("lowprotein")) add("protein", 3, "you <b>don't get much protein</b> from food");
     }
 
     // Hydrate
     if (ex.includes("sweat")) add("hydrate", 3.5, "you <b>sweat a lot</b>");
     if (training >= 5) add("hydrate", 2, "you're <b>training 5+ days</b> a week");
     if (has("energy")) add("hydrate", 1.5 * w("energy"), "mild dehydration is a common cause of <b>low energy</b>");
+    if (act.includes("cardio")) add("hydrate", 2, "<b>long cardio sessions</b> drain electrolytes");
+    if (act.includes("sport")) add("hydrate", 1);
+    if (energy === "afternoon" || energy === "allday") add("hydrate", 1);
 
     // Rest
     if (has("sleep")) add("rest", 3.5 * w("sleep"), "you want to <b>sleep deeper</b>");
     if (sleep === "poor") add("rest", 2.5, "you said sleep has been <b>rough</b>");
     if (sleep === "ok") add("rest", 1);
+    if (ex.includes("alcohol")) add("rest", 0.5);
 
     // Focus (not for caffeine-sensitive)
     if (!ex.includes("caffeine")) {
       if (has("focus")) add("focus", 3 * w("focus"), "you want <b>sharper focus</b>");
       if (has("energy")) add("focus", 2.5 * w("energy"), "you want <b>steadier energy</b> without the crash");
       if (sleep === "short") add("focus", 0.5);
+      if (energy === "morning") add("focus", 1.5, "your <b>mornings start slow</b>");
+      if (energy === "afternoon") add("focus", 1.5, "you hit a <b>mid-afternoon slump</b>");
     }
 
     const ranked = Object.entries(r)
@@ -650,8 +697,33 @@
     return picks.map(x => ({ ...x, match: Math.min(99, Math.round(70 + 29 * (x.score / top))) }));
   }
 
+  const LABEL = {
+    age: { u30: "Under 30", "30s": "In your 30s", "40s": "In your 40s", "50p": "50+" },
+    training: { 0: "Trains rarely", 1: "Trains 1–2×/week", 3: "Trains 3–4×/week", 5: "Trains 5+×/week" },
+    activity: { lifting: "Lifts", cardio: "Endurance", sport: "Plays sport", mobility: "Mobility" },
+    energy: { morning: "Slow mornings", afternoon: "Afternoon slump", allday: "Low energy", rarely: "Good energy" },
+    sleep: { good: "Sleeps well", ok: "Patchy sleep", poor: "Rough sleep", short: "Short on sleep" },
+    stress: { low: "Low stress", mod: "Moderate stress", high: "High stress", vhigh: "Very high stress" },
+    diet: { omni: "Eats most things", nofish: "Rarely eats fish", veg: "Vegetarian", vegan: "Vegan" },
+  };
+
   let lastPicks = [];
   function showResult() {
+    const res = $("#quizResult");
+    $("#quizBar").style.width = "100%";
+    form.hidden = true;
+    res.hidden = false;
+    const n = firstName();
+    const steps = ["Weighing your goals and training", "Checking diet, caffeine and medication fit", "Matching 9 products to your answers", "Applying your bundle pricing"];
+    res.innerHTML = `<div class="building"><div class="spinner" aria-hidden="true"></div>
+      <h3>Building ${n ? esc(n) + "'s" : "your"} bundle…</h3>
+      <ul>${steps.map((t, i) => `<li style="animation-delay:${i * 0.35}s">${t}</li>`).join("")}</ul></div>`;
+    $("#quiz").scrollIntoView({ behavior: "smooth", block: "start" });
+    const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    setTimeout(renderResult, reduce ? 300 : 1800);
+  }
+
+  function renderResult() {
     const answers = Object.fromEntries(QUESTIONS.map(q => [q.name, values(q.name)]));
     const picks = recommend(answers);
     lastPicks = picks.map(p => p.id);
@@ -668,15 +740,20 @@
     if (answers.extras.includes("caffeine")) notes.push("We've left out Focus since you're caffeine-sensitive.");
     if (lastPicks.includes("ashwagandha")) notes.push("Calm (ashwagandha) isn't suitable with thyroid medication or autoimmune conditions.");
 
-    $("#quizBar").style.width = "100%";
-    form.hidden = true;
+    if (answers.extras.includes("lowprotein") && answers.diet[0] === "vegan") notes.push("You said you don't eat much protein. A plant protein is on our roadmap. Until then, aim for legumes, tofu and tempeh at most meals.");
+    const n = firstName();
+    const profile = [
+      LABEL.age[answers.age[0]], LABEL.training[answers.training[0]],
+      ...answers.activity.map(x => LABEL.activity[x]), LABEL.energy[answers.energy[0]],
+      LABEL.sleep[answers.sleep[0]], LABEL.stress[answers.stress[0]], LABEL.diet[answers.diet[0]],
+    ].filter(Boolean);
     const res = $("#quizResult");
-    res.hidden = false;
     res.innerHTML = `
       <div class="result-head">
         <div>
-          <p class="eyebrow">Your personal bundle</p>
-          <h3>${picks.length} products for ${esc(goalText)}.</h3>
+          <p class="eyebrow">${n ? esc(n) + "'s" : "Your"} personal bundle</p>
+          <h3>${n ? esc(n) + ", here are" : "Here are"} ${picks.length} products for ${esc(goalText)}.</h3>
+          <p class="profile">${profile.map(t => `<span>${esc(t)}</span>`).join("")}</p>
           <p>Ranked by how closely each matches your answers. Bought together they're ${Math.round(BUNDLE_OFF * 100)}% off, plus another ${Math.round(STACK_SUB_OFF * 100)}% when you subscribe.</p>
         </div>
         <button class="q-back" data-restart>↺ Retake survey</button>
@@ -684,7 +761,7 @@
       <div class="result-list">
         ${picks.map(x => {
           const p = P[x.id];
-          const why = x.why.slice(0, 2).join(", and ");
+          const r3 = x.why.slice(0, 3); const why = r3.length > 1 ? r3.slice(0, -1).join(", ") + ", and " + r3[r3.length - 1] : r3[0];
           return `<div class="result-item">
             <div class="mini">${art(p)}</div>
             <div>
@@ -706,12 +783,11 @@
       </div>
       ${notes.length ? `<div class="result-note">${notes.map(esc).join("<br>")}</div>` : ""}
       <p class="result-note" style="background:none;padding:14px 0 0">These recommendations are general guidance, not medical advice.</p>`;
-    $("#quiz").scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   $("#quizResult").addEventListener("click", e => {
     if (e.target.closest("[data-restart]")) {
-      form.reset(); form.hidden = false; $("#quizResult").hidden = true; step = 0;
+      form.reset(); personalize(); form.hidden = false; $("#quizResult").hidden = true; step = 0;
       $$(".quiz-step", form).forEach((el, i) => el.classList.toggle("active", i === 0));
       updateBar();
       return;
