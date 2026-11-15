@@ -240,14 +240,13 @@
       pitch: "Flexible, but every month is a new chance to skip. A paused box is usually where the habit breaks." },
     { id: "3",       name: "3 months upfront",  months: 3,  off: 0.20, note: "Billed every 3 months. Shipped monthly.",
       pitch: "12 weeks matches the length of most supplement studies. Enough time to actually see what your bundle does for you." },
-    { id: "6",       name: "6 months upfront",  months: 6,  off: 0.30, note: "Billed every 6 months. Shipped monthly.",
-      pitch: "Half a year of showing up. Long enough for the routine to become automatic, with no monthly decision to quit." },
     { id: "12",      name: "12 months upfront", months: 12, off: 0.40, note: "Billed yearly. Shipped monthly. Best value.",
       pitch: "Decide once and stop thinking about it. A full year of consistency at your lowest price, locked in." },
   ];
   const MAX_OFF = Math.round(Math.max(...PLANS.map(p => p.off)) * 100);
   const PERK = "Free weekly pill organizer with your 2nd delivery";
   const PLAN = Object.fromEntries(PLANS.map(p => [p.id, p]));
+  const SUB_PLANS = PLANS.filter(p => p.id !== "once");      // shown as cards; one-time is a quiet link
   const planOf = l => PLAN[l.plan] ? l.plan : (l.sub ? "monthly" : "once");
   // Every number shown for a bundle comes from here
   function quote(ids, doses, planId) {
@@ -358,7 +357,7 @@
             <div class="line-price">${pr.full > pr.now ? `<s>${money2(pr.full)}</s>` : ""}${money2(pr.now)}</div>
           </div>
           ${bundleEdit}
-          <label class="plan-select">Plan <select data-act="plan" aria-label="Plan">${PLANS.map(p => {
+          <label class="plan-select">Plan <select data-act="plan" aria-label="Plan">${[...SUB_PLANS, PLAN.once].map(p => {
               const q = quote(lineIds, lineDoses, p.id);
               return `<option value="${p.id}" ${planOf(l) === p.id ? "selected" : ""}>${p.name} · ${money2(q.perMonth)}${p.id === "once" ? "" : "/mo"}${p.off ? ` · ${Math.round(p.off * 100)}% off` : ""}</option>`;
             }).join("")}</select></label>
@@ -366,8 +365,8 @@
               ? `${money2(q.perMonth)}/mo × ${q.plan.months} months, charged today. ${q.plan.note}`
               : q.plan.id === "once" ? `${money2(q.perMonth)} once. ${q.plan.note}` : `${money2(q.perMonth)} per month. ${q.plan.note}`; })()}</p>
           ${planOf(l) !== "once" ? `<p class="perk-line">+ ${PERK}.</p>` : ""}
-          ${pr.q.plan.months === 1 ? (() => { const up = quote(lineIds, lineDoses, "6");
-            return `<button class="cart-nudge" data-act="plan-up" data-val="6">Stay consistent: 6 months upfront is ${money2(up.perMonth * l.qty)}/mo, ${money2((pr.q.perMonth - up.perMonth) * l.qty)} less →</button>`; })() : ""}
+          ${pr.q.plan.months === 1 ? (() => { const up = quote(lineIds, lineDoses, "3");
+            return `<button class="cart-nudge" data-act="plan-up" data-val="3">Stay consistent: 3 months upfront is ${money2(up.perMonth * l.qty)}/mo, ${money2((pr.q.perMonth - up.perMonth) * l.qty)} less →</button>`; })() : ""}
           <div class="line-controls">
             <div class="qty"><button data-act="dec" aria-label="Decrease">−</button><span>${l.qty}</span><button data-act="inc" aria-label="Increase">+</button></div>
             <button class="line-remove" data-act="remove">Remove</button>
@@ -527,8 +526,9 @@
           <div class="buy-opts" role="radiogroup" aria-label="Purchase option">
             ${bundle && !inBundle ? `<button class="buy-opt on" data-buy="bundle" role="radio" aria-checked="true"><span><strong>Add to my bundle</strong><small>Joins your bundle on its ${esc(bq.plan.name.toLowerCase())} plan</small></span><span class="p">${bq.planDisc ? `<s>${money(p.price)}</s>` : ""}${money2(bq.perMonth)}${bq.plan.id === "once" ? "" : "/mo"}</span></button>` : ""}
             ${inBundle ? `<p class="in-bundle">✓ Already in your bundle</p>` : ""}
-            ${PLANS.map(pl => { const q = quote([id], {}, pl.id); const on = modalMode === pl.id;
+            ${SUB_PLANS.map(pl => { const q = quote([id], {}, pl.id); const on = modalMode === pl.id;
               return `<button class="buy-opt ${on ? "on" : ""}" data-buy="${pl.id}" role="radio" aria-checked="${on}"><span><strong>${pl.name}${pl.off ? ` · save ${Math.round(pl.off * 100)}%` : ""}</strong><small>${pl.months > 1 ? `${money2(q.today)} today · ` : ""}${esc(pl.note)}</small></span><span class="p">${pl.off ? `<s>${money(p.price)}</s>` : ""}${money2(q.perMonth)}${pl.id === "once" ? "" : "/mo"}</span></button>`; }).join("")}
+            <button class="once-opt ${modalMode === "once" ? "on" : ""}" data-buy="once" role="radio" aria-checked="${modalMode === "once"}">Or buy once at full price, ${money2(p.price)}</button>
           </div>
           <p class="perk-note">+ Subscribe on any plan and get a free weekly pill organizer with your 2nd delivery.</p>
           <button class="btn btn-primary btn-block" id="modalAdd">Add to cart</button>
@@ -926,7 +926,7 @@
       <div class="plans">
         <h4>Choose your plan</h4>
         <div class="plan-grid" role="radiogroup" aria-label="Plan">
-          ${PLANS.map(p => {
+          ${SUB_PLANS.map(p => {
             const pq = quote(lastPicks, lastDoses, p.id);
             return `<button class="plan ${p.id === lastPlan ? "on" : ""}" data-plan="${p.id}" role="radio" aria-checked="${p.id === lastPlan}">
               ${p.id === "12" ? `<span class="plan-flag">Best value</span>` : p.id === "monthly" ? `<span class="plan-flag">Most flexible</span>` : ""}
@@ -938,6 +938,10 @@
             </button>`;
           }).join("")}
         </div>
+        ${(() => { const oq = quote(lastPicks, lastDoses, "once");
+          return lastPlan === "once"
+            ? `<p class="once-link is-on">One-time purchase selected: ${money2(oq.today)}, no subscription. <button data-plan="monthly">Switch to monthly and save 15%</button></p>`
+            : `<p class="once-link">Not ready to subscribe? <button data-plan="once">Buy once at full price (${money2(oq.today)})</button></p>`; })()}
         <p class="plan-note">${esc(q.plan.note)}</p>
         <div class="plan-pitch ${q.plan.months > 1 ? "is-upfront" : ""}"><strong>${q.plan.months > 1 ? "Built for consistency." : "Worth knowing."}</strong> ${esc(q.plan.pitch)}
           ${q.plan.months === 1 ? (() => { const up = quote(lastPicks, lastDoses, "3");

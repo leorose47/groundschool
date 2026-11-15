@@ -646,3 +646,14 @@ a.how-step p { color: #bdbdbb; }
 .perk-card strong { display: block; font-weight: 600; margin-bottom: 4px; }
 .perk-card p { font-size: 14px; color: var(--ink-2); }
 @media (max-width: 520px) { .perk-card { flex-direction: column; align-items: flex-start; } }
+
+/* 3 subscription plans + quiet one-time option */
+.plan-grid { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 900px) { .plan-grid { grid-template-columns: 1fr; } .plan-grid .plan:last-child { grid-column: auto; } }
+.once-link { margin-top: 12px; font-size: 13px; color: var(--muted); }
+.once-link button { font-size: 13px; color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; padding: 0; }
+.once-link.is-on { color: var(--ink); font-weight: 500; }
+.once-link.is-on button { color: var(--ink); font-weight: 600; margin-left: 4px; }
+.once-opt { display: block; margin: 4px 0 0; padding: 4px 0; font-size: 13px; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; text-align: left; }
+.once-opt.on { color: var(--ink); font-weight: 600; text-decoration: none; }
+.once-opt.on::before { content: "✓ "; }
