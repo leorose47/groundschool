@@ -11,4 +11,5 @@ cd supplements && python3 -m http.server 8000
 - `app.js`: product catalog, quiz scoring, cart and product modal
 
 Product data (doses, prices, label facts) lives at the top of `app.js` in `PRODUCTS` and `STACKS`.
+Product images are in `img/` (3D studio renders, see `tools/render/`). Replace them with real photos at the same filenames.
 Checkout is a placeholder. Hook `#checkoutBtn` up to Shopify, Stripe or similar.

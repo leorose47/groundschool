@@ -3,18 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Tropos — supplements for men, matched to your goals and delivered on your schedule. Take the 2-minute quiz to build your stack.">
-  <meta name="theme-color" content="#f4f1ea">
+  <meta name="description" content="Tropos — supplements for men, matched to your goals and delivered on your schedule. Take the 2-minute survey to build your bundle.">
+  <meta name="theme-color" content="#f5f5f3">
   <title>Tropos — Built Around You</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%232f4a3a'/><rect x='8' y='20' width='16' height='3' rx='1.5' fill='%23f4f1ea'/></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23141414'/><rect x='8' y='20' width='16' height='3' rx='1.5' fill='%23f5f5f3'/></svg>">
 </head>
 <body>
 
-<div class="announce">Subscribe &amp; save 20% · Free shipping on subscriptions and orders over $60</div>
+<div class="announce">Take the 2-minute survey · Your personal bundle saves 15%, plus 10% more on subscription</div>
 
 <!-- NAV -->
 <header class="nav" id="nav">
@@ -25,11 +25,12 @@
     <nav class="nav-links" id="navLinks">
       <a href="#shop">Shop</a>
       <a href="#stacks">Stacks</a>
-      <a href="#quiz">Find your stack</a>
+      <a href="#quiz">Survey</a>
       <a href="#subscribe">Subscriptions</a>
       <a href="#labels">Our labels</a>
     </nav>
     <div class="nav-actions">
+      <a href="#quiz" class="btn btn-primary btn-sm nav-survey"><span class="ns-long">Take the survey</span><span class="ns-short">Survey</span></a>
       <button class="cart-btn" id="cartBtn" aria-label="Open cart">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 7h14l-1.2 12.1a2 2 0 0 1-2 1.9H8.2a2 2 0 0 1-2-1.9L5 7Z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg>
         <span>Cart</span>
@@ -44,22 +45,27 @@
 
 <!-- HERO -->
 <section class="hero">
-  <div class="wrap hero-grid">
-    <div class="hero-copy">
-      <p class="eyebrow">Personalized · Delivered · Simple</p>
-      <h1>Built around<br><em>you.</em></h1>
-      <p class="lede">Answer a few questions and we'll match you to the supplements that fit your goals, then ship them on your schedule. No guesswork, no cabinet full of half-used bottles, no running out.</p>
-      <div class="hero-cta">
-        <a href="#quiz" class="btn btn-primary">Find my stack <span aria-hidden="true">→</span></a>
-        <a href="#shop" class="btn btn-ghost">Shop all</a>
-      </div>
-      <ul class="hero-proof">
-        <li><strong>100%</strong> doses disclosed</li>
-        <li><strong>3rd-party</strong> tested every batch</li>
-        <li><strong>Skip or cancel</strong> any time</li>
-      </ul>
+  <div class="wrap hero-center">
+    <p class="eyebrow">Personalized · Delivered · Simple</p>
+    <h1>Built around <em>you.</em></h1>
+    <p class="lede">Answer seven quick questions about your goals, training, sleep and diet. We'll build a bundle of exactly what you need, and nothing you don't, then deliver it every month.</p>
+    <div class="hero-cta">
+      <a href="#quiz" class="btn btn-primary btn-lg">Start my survey <span aria-hidden="true">→</span></a>
+      <a href="#shop" class="btn btn-ghost btn-lg">Shop all</a>
     </div>
-    <div class="hero-visual" id="heroVisual" aria-hidden="true"></div>
+    <p class="hero-meta"><span>2 minutes</span><span>7 questions</span><span>No account needed</span></p>
+  </div>
+  <div class="wrap">
+    <div class="hero-visual" id="heroVisual"></div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how">
+  <div class="wrap how-grid">
+    <a href="#quiz" class="how-step"><span class="how-n">01</span><div><strong>Take the survey</strong><p>Two minutes on your goals, routine and diet.</p></div></a>
+    <div class="how-step"><span class="how-n">02</span><div><strong>Get your bundle</strong><p>3–5 products matched to you, each with the reason it was picked.</p></div></div>
+    <div class="how-step"><span class="how-n">03</span><div><strong>It shows up monthly</strong><p>Skip, swap or cancel any time. Re-take the survey as your goals change.</p></div></div>
   </div>
 </section>
 
@@ -74,9 +80,9 @@
 <section class="section quiz-section" id="quiz">
   <div class="wrap">
     <div class="section-head">
-      <p class="eyebrow">2-minute quiz</p>
-      <h2>Build a stack around <em>your</em> goals.</h2>
-      <p class="section-sub">Tell us what you're working on. We'll recommend 3–5 products and explain exactly why each one made the cut.</p>
+      <p class="eyebrow">The survey · 2 minutes</p>
+      <h2>Tell us about you.<br>We'll build <em>your</em> bundle.</h2>
+      <p class="section-sub">Most men don't need ten supplements. They need the right three or four. Answer seven questions and we'll put together a bundle of exactly those, with the reason each one made the cut.</p>
     </div>
 
     <div class="quiz-card" id="quizCard">
@@ -99,6 +105,10 @@
       </div>
       <div class="filters" id="filters" role="tablist" aria-label="Filter by goal"></div>
     </div>
+    <a href="#quiz" class="survey-banner">
+      <div><strong>Not sure what you need?</strong><span>Skip the guesswork. The survey builds your bundle and saves you 15%.</span></div>
+      <span class="btn btn-primary btn-sm">Take the survey →</span>
+    </a>
     <div class="product-grid" id="productGrid"></div>
   </div>
 </section>
@@ -109,7 +119,7 @@
     <div class="section-head">
       <p class="eyebrow">Bundles</p>
       <h2>Stacks that work together.</h2>
-      <p class="section-sub">Pre-built combinations for the most common goals. Save up to 20% versus buying separately, plus an extra 10% when you subscribe.</p>
+      <p class="section-sub">Pre-built combinations for the most common goals. Save up to 20% versus buying separately, plus an extra 10% when you subscribe. Want one built for you instead? <a href="#quiz" class="inline-link">Take the survey →</a></p>
     </div>
     <div class="stack-grid" id="stackGrid"></div>
   </div>
@@ -121,9 +131,9 @@
     <div>
       <p class="eyebrow">Subscriptions</p>
       <h2>Set it once.<br>Never run out.</h2>
-      <p class="section-sub">Your stack ships on your schedule. Change what's in it, push a delivery back, or cancel. Two clicks, no phone calls.</p>
+      <p class="section-sub">Your bundle ships on your schedule. Change what's in it, push a delivery back, or cancel. Two clicks, no phone calls.</p>
       <ol class="steps">
-        <li><span>1</span><div><strong>Pick your products</strong><p>Choose individually, grab a stack, or take the quiz.</p></div></li>
+        <li><span>1</span><div><strong>Pick your products</strong><p>Take the survey, grab a ready-made stack, or pick individually.</p></div></li>
         <li><span>2</span><div><strong>Choose your rhythm</strong><p>Deliveries every 30, 60 or 90 days.</p></div></li>
         <li><span>3</span><div><strong>Adjust whenever</strong><p>Skip, swap, pause or cancel from your account.</p></div></li>
       </ol>
@@ -179,7 +189,7 @@
       <h2>Good to know.</h2>
     </div>
     <div class="faq">
-      <details><summary>Do I need to take everything the quiz recommends?</summary><p>No. The quiz ranks products by how well they match your answers. Start with the top one or two and add more if you want. Each recommendation shows the reason it was chosen.</p></details>
+      <details><summary>Do I need to take everything the survey recommends?</summary><p>No. The survey ranks products by how well they match your answers. Start with the top one or two and add more if you want. Each recommendation shows the reason it was chosen.</p></details>
       <details><summary>How does the subscription work?</summary><p>You get 20% off and free shipping on every delivery. Choose 30, 60 or 90 day intervals. You can skip, swap products, pause or cancel any time from your account, and there's no minimum number of orders.</p></details>
       <details><summary>How are your products tested?</summary><p>Each batch is tested by an independent, ISO 17025-accredited lab for identity, potency, microbes and heavy metals. Results are matched to the lot number printed on your bottle.</p></details>
       <details><summary>Can I take these with medication?</summary><p>Some ingredients, like ashwagandha, vitamin K2 and caffeine, can interact with medications or health conditions. Each product lists its cautions. If you take prescription medication, check with your doctor first.</p></details>
@@ -210,7 +220,7 @@
       <p class="muted">Clean, clinically-dosed supplements for men.</p>
       <p class="muted name-note"><em>Tropos</em> (Greek): way, manner. Your way.</p>
     </div>
-    <div><strong>Shop</strong><a href="#shop">All products</a><a href="#stacks">Stacks</a><a href="#quiz">Take the quiz</a></div>
+    <div><strong>Shop</strong><a href="#shop">All products</a><a href="#stacks">Stacks</a><a href="#quiz">Take the survey</a></div>
     <div><strong>Learn</strong><a href="#labels">Our labels</a><a href="#subscribe">Subscriptions</a><a href="#faq">FAQ</a></div>
   </div>
   <div class="wrap disclaimer">
@@ -235,6 +245,8 @@
 <div class="modal" id="modal" role="dialog" aria-modal="true" aria-hidden="true">
   <div class="modal-panel" id="modalPanel"></div>
 </div>
+
+<a href="#quiz" class="float-cta" id="floatCta">Build my bundle <span>· 2 min</span></a>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 

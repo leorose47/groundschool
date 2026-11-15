@@ -4,7 +4,8 @@
 
   /* ───────────────────────── Catalog ───────────────────────── */
   const SUB_OFF = 0.20;        // subscribe & save on single products
-  const STACK_SUB_OFF = 0.10;  // extra off a stack when subscribed
+  const STACK_SUB_OFF = 0.10;  // extra off a stack/bundle when subscribed
+  const BUNDLE_OFF = 0.15;     // personal bundle built by the survey
   const FREE_SHIP = 60;
   const SHIPPING = 5.95;
 
@@ -21,7 +22,7 @@
 
   const PRODUCTS = [
     {
-      id: "foundation", lbl: "50 mcg VITAMIN D3", num: "01", name: "Foundation", kind: "Daily multivitamin", shape: "bottle", color: "#2f4a3a", labelInk: "#2f4a3a",
+      id: "foundation", lbl: "50 mcg VITAMIN D3", num: "01", name: "Foundation", kind: "Daily multivitamin", shape: "bottle", color: "#e9e9e7", labelInk: "#1a1a1a",
       purpose: "The nutrients most men run low on, in forms your body actually uses.",
       price: 34, servings: 30, form: "2 capsules", tag: "Bestseller",
       goals: ["essentials", "energy", "heart"],
@@ -44,7 +45,7 @@
       caution: "Contains vitamin K2. If you take blood thinners such as warfarin, speak with your doctor before use.",
     },
     {
-      id: "omega", lbl: "1,000 mg EPA", num: "02", name: "Omega", kind: "Fish oil · EPA + DHA", shape: "bottle", color: "#3d5a6c", labelInk: "#3d5a6c",
+      id: "omega", lbl: "1,000 mg EPA", num: "02", name: "Omega", kind: "Fish oil · EPA + DHA", shape: "bottle", color: "#e4e4e2", labelInk: "#1a1a1a",
       purpose: "High-potency omega-3s from small, wild-caught fish. No fishy burps.",
       price: 32, servings: 30, form: "2 softgels",
       goals: ["heart", "recovery", "focus"],
@@ -64,7 +65,7 @@
       caution: "Contains fish. If you take blood thinners, speak with your doctor before use.",
     },
     {
-      id: "creatine", lbl: "5 g CREATINE", num: "03", name: "Creatine", kind: "Micronized monohydrate", shape: "tub", color: "#b4ad9e", labelInk: "#3b3a33",
+      id: "creatine", lbl: "5 g CREATINE", num: "03", name: "Creatine", kind: "Micronized monohydrate", shape: "tub", color: "#ebebe9", labelInk: "#1a1a1a",
       purpose: "The most researched supplement in sports nutrition. One scoop, nothing else.",
       price: 29, servings: 60, form: "1 scoop (5 g)", tag: "Most studied",
       goals: ["strength", "recovery", "focus"],
@@ -77,7 +78,7 @@
       caution: "Drink plenty of water. If you have kidney disease, speak with your doctor before use.",
     },
     {
-      id: "magnesium", lbl: "200 mg MAGNESIUM", num: "04", name: "Magnesium", kind: "Bisglycinate", shape: "bottle", color: "#8a9a83", labelInk: "#3f4d3b",
+      id: "magnesium", lbl: "200 mg MAGNESIUM", num: "04", name: "Magnesium", kind: "Bisglycinate", shape: "bottle", color: "#dededc", labelInk: "#1a1a1a",
       purpose: "The gentle, well-absorbed form of a mineral most men don't get enough of.",
       price: 24, servings: 30, form: "2 capsules",
       goals: ["sleep", "recovery", "stress"],
@@ -90,7 +91,7 @@
       caution: "If you have kidney disease, speak with your doctor before use.",
     },
     {
-      id: "ashwagandha", lbl: "600 mg ASHWAGANDHA", num: "05", name: "Calm", kind: "Ashwagandha root extract", shape: "bottle", color: "#b7895f", labelInk: "#6b4a2e",
+      id: "ashwagandha", lbl: "600 mg ASHWAGANDHA", num: "05", name: "Calm", kind: "Ashwagandha root extract", shape: "bottle", color: "#e2e2e0", labelInk: "#1a1a1a",
       purpose: "A clinically studied adaptogen for staying level when life isn't.",
       price: 28, servings: 30, form: "1 capsule",
       goals: ["stress", "sleep", "strength"],
@@ -103,7 +104,7 @@
       caution: "Not for use with thyroid medication, sedatives, immunosuppressants, or if you have a thyroid or autoimmune condition. Speak with your doctor first.",
     },
     {
-      id: "protein", lbl: "25 g PROTEIN", num: "06", name: "Protein", kind: "Grass-fed whey isolate", shape: "tub", color: "#d8d0bf", labelInk: "#4a4337",
+      id: "protein", lbl: "25 g PROTEIN", num: "06", name: "Protein", kind: "Grass-fed whey isolate", shape: "tub", color: "#d9d9d7", labelInk: "#1a1a1a",
       purpose: "25 g of clean protein per scoop. Mixes smooth, tastes like real vanilla.",
       price: 54, servings: 30, form: "1 scoop (30 g)",
       goals: ["strength", "recovery"],
@@ -124,7 +125,7 @@
       caution: "Contains milk.",
     },
     {
-      id: "hydrate", lbl: "1,000 mg SODIUM", num: "07", name: "Hydrate", kind: "Electrolyte drink mix", shape: "tub", color: "#7fa1a8", labelInk: "#2f4f56",
+      id: "hydrate", lbl: "1,000 mg SODIUM", num: "07", name: "Hydrate", kind: "Electrolyte drink mix", shape: "tub", color: "#e6e6e4", labelInk: "#1a1a1a",
       purpose: "Real electrolyte doses for training, heat and early mornings. Zero sugar.",
       price: 30, servings: 30, form: "1 stick",
       goals: ["energy", "recovery"],
@@ -143,7 +144,7 @@
       caution: "High in sodium. If you're on a sodium-restricted diet or have high blood pressure, speak with your doctor first.",
     },
     {
-      id: "rest", lbl: "3 g GLYCINE", num: "08", name: "Rest", kind: "Non-habit-forming sleep", shape: "bottle", color: "#3b3f4f", labelInk: "#3b3f4f",
+      id: "rest", lbl: "3 g GLYCINE", num: "08", name: "Rest", kind: "Non-habit-forming sleep", shape: "bottle", color: "#dcdcda", labelInk: "#1a1a1a",
       purpose: "Wind down without melatonin. Wake up without the fog.",
       price: 32, servings: 30, form: "3 capsules",
       goals: ["sleep", "stress"],
@@ -160,7 +161,7 @@
       caution: "Don't combine with sedatives or alcohol. Speak with your doctor if you take medication.",
     },
     {
-      id: "focus", lbl: "100 mg CAFFEINE", num: "09", name: "Focus", kind: "Caffeine + L-theanine", shape: "bottle", color: "#c4a24a", labelInk: "#6a5420",
+      id: "focus", lbl: "100 mg CAFFEINE", num: "09", name: "Focus", kind: "Caffeine + L-theanine", shape: "bottle", color: "#d6d6d4", labelInk: "#1a1a1a",
       purpose: "A clean, steady lift. About one cup of coffee, without the crash.",
       price: 30, servings: 30, form: "1 capsule",
       goals: ["focus", "energy"],
@@ -195,6 +196,7 @@
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const stackBase = s => s.items.reduce((t, id) => t + P[id].price, 0);
   const stackPrice = s => Math.round(stackBase(s) * (1 - s.off));
+  const bundleBase = ids => ids.reduce((t, id) => t + P[id].price, 0);
 
   let toastTimer;
   function toast(msg) {
@@ -205,109 +207,9 @@
     toastTimer = setTimeout(() => t.classList.remove("show"), 2400);
   }
 
-  /* Product artwork: SVG with cylinder shading so bottles read as real objects */
-  let artSeq = 0;
+  /* Product imagery: studio renders in img/ (swap for real photography 1:1) */
   function art(p) {
-    const u = "a" + (++artSeq);
-    const ink = p.labelInk;
-    const brand = "TROPOS";
-    const defs = `
-      <linearGradient id="${u}cyl" x1="0" x2="1">
-        <stop offset="0" stop-color="#000" stop-opacity=".38"/>
-        <stop offset=".14" stop-color="#000" stop-opacity=".08"/>
-        <stop offset=".27" stop-color="#fff" stop-opacity=".16"/>
-        <stop offset=".36" stop-color="#fff" stop-opacity=".04"/>
-        <stop offset=".62" stop-color="#000" stop-opacity=".02"/>
-        <stop offset=".86" stop-color="#000" stop-opacity=".18"/>
-        <stop offset="1" stop-color="#000" stop-opacity=".42"/>
-      </linearGradient>
-      <linearGradient id="${u}lab" x1="0" x2="1">
-        <stop offset="0" stop-color="#000" stop-opacity=".22"/>
-        <stop offset=".16" stop-color="#000" stop-opacity=".03"/>
-        <stop offset=".28" stop-color="#fff" stop-opacity=".35"/>
-        <stop offset=".4" stop-color="#fff" stop-opacity="0"/>
-        <stop offset=".85" stop-color="#000" stop-opacity=".08"/>
-        <stop offset="1" stop-color="#000" stop-opacity=".26"/>
-      </linearGradient>
-      <linearGradient id="${u}cap" x1="0" x2="1">
-        <stop offset="0" stop-color="#0b0e0c"/>
-        <stop offset=".22" stop-color="#2b312d"/>
-        <stop offset=".32" stop-color="#3d4440"/>
-        <stop offset=".5" stop-color="#1c211e"/>
-        <stop offset="1" stop-color="#070908"/>
-      </linearGradient>
-      <linearGradient id="${u}vert" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#fff" stop-opacity=".10"/>
-        <stop offset=".25" stop-color="#fff" stop-opacity="0"/>
-        <stop offset=".85" stop-color="#000" stop-opacity="0"/>
-        <stop offset="1" stop-color="#000" stop-opacity=".22"/>
-      </linearGradient>
-      <linearGradient id="${u}spec" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#fff" stop-opacity="0"/>
-        <stop offset=".2" stop-color="#fff" stop-opacity=".28"/>
-        <stop offset=".8" stop-color="#fff" stop-opacity=".18"/>
-        <stop offset="1" stop-color="#fff" stop-opacity="0"/>
-      </linearGradient>
-      <radialGradient id="${u}shadow" cx=".5" cy=".5" r=".5">
-        <stop offset="0" stop-color="#1c221e" stop-opacity=".35"/>
-        <stop offset="1" stop-color="#1c221e" stop-opacity="0"/>
-      </radialGradient>`;
-    const ridges = (x0, x1, y, h, step) => {
-      let s = "";
-      for (let x = x0 + step; x < x1; x += step) s += `<line x1="${x}" y1="${y}" x2="${x}" y2="${y + h}"/>`;
-      return `<g stroke="#000" stroke-opacity=".35" stroke-width=".6">${s}</g>`;
-    };
-    const fit = (len, big, small, limit) => (len > limit ? small : big);
-
-    if (p.shape === "tub") {
-      return `<svg viewBox="0 0 140 160" role="img" aria-label="${esc(p.name)} container">
-        <defs>${defs}</defs>
-        <ellipse cx="70" cy="151" rx="62" ry="6" fill="url(#${u}shadow)"/>
-        <rect x="16" y="36" width="108" height="112" rx="7" fill="${p.color}"/>
-        <rect x="16" y="36" width="108" height="112" rx="7" fill="url(#${u}vert)"/>
-        <rect x="16" y="62" width="108" height="66" fill="#f6f3eb"/>
-        <rect x="16" y="62" width="108" height=".6" fill="#000" opacity=".12"/>
-        <rect x="16" y="127.4" width="108" height=".6" fill="#000" opacity=".12"/>
-        <text x="70" y="75" text-anchor="middle" font-family="Inter,Arial" font-size="5.2" font-weight="600" letter-spacing="2.2" fill="${ink}">${brand}</text>
-        <text x="70" y="95" text-anchor="middle" font-family="Fraunces,Georgia,serif" font-size="16" fill="${ink}">${esc(p.name)}</text>
-        <line x1="58" y1="101" x2="82" y2="101" stroke="${ink}" stroke-opacity=".35" stroke-width=".5"/>
-        <text x="70" y="110" text-anchor="middle" font-family="Inter,Arial" font-size="${fit(p.lbl.length, 5.4, 4.6, 15)}" letter-spacing=".7" fill="${ink}" opacity=".85">${esc(p.lbl)}</text>
-        <text x="70" y="121" text-anchor="middle" font-family="Inter,Arial" font-size="3.6" letter-spacing=".9" fill="${ink}" opacity=".55">${p.servings} SERVINGS · SUPPLEMENT</text>
-        <rect x="16" y="36" width="108" height="112" rx="7" fill="url(#${u}cyl)"/>
-        <rect x="31" y="42" width="5" height="100" rx="2.5" fill="url(#${u}spec)"/>
-        <rect x="12" y="12" width="116" height="26" rx="3.5" fill="url(#${u}cap)"/>
-        ${ridges(12, 128, 15, 20, 3.2)}
-        <rect x="12" y="12" width="116" height="2.2" rx="1.1" fill="#fff" opacity=".12"/>
-        <rect x="12" y="35.5" width="116" height="2.5" fill="#000" opacity=".35"/>
-      </svg>`;
-    }
-
-    const body = "M14 54 C14 42 22 38 34 37 L66 37 C78 38 86 42 86 54 L86 160 Q86 168 78 168 L22 168 Q14 168 14 160 Z";
-    return `<svg viewBox="0 0 100 178" role="img" aria-label="${esc(p.name)} bottle">
-      <defs>${defs}<clipPath id="${u}clip"><path d="${body}"/></clipPath></defs>
-      <ellipse cx="50" cy="170" rx="42" ry="5" fill="url(#${u}shadow)"/>
-      <rect x="34" y="29" width="32" height="9" fill="${p.color}"/>
-      <rect x="34" y="29" width="32" height="9" fill="url(#${u}cyl)"/>
-      <rect x="34" y="29" width="32" height="2" fill="#000" opacity=".3"/>
-      <g clip-path="url(#${u}clip)">
-        <path d="${body}" fill="${p.color}"/>
-        <path d="${body}" fill="url(#${u}vert)"/>
-        <rect x="14" y="76" width="72" height="66" fill="#f6f3eb"/>
-        <rect x="14" y="76" width="72" height=".6" fill="#000" opacity=".12"/>
-        <rect x="14" y="141.4" width="72" height=".6" fill="#000" opacity=".12"/>
-        <text x="50" y="88" text-anchor="middle" font-family="Inter,Arial" font-size="4.4" font-weight="600" letter-spacing="2" fill="${ink}">${brand}</text>
-        <text x="50" y="106" text-anchor="middle" font-family="Fraunces,Georgia,serif" font-size="${fit(p.name.length, 13.5, 11.5, 8)}" fill="${ink}">${esc(p.name)}</text>
-        <line x1="40" y1="112" x2="60" y2="112" stroke="${ink}" stroke-opacity=".35" stroke-width=".45"/>
-        <text x="50" y="121" text-anchor="middle" font-family="Inter,Arial" font-size="${fit(p.lbl.length, 4.7, 4, 15)}" letter-spacing=".5" fill="${ink}" opacity=".85">${esc(p.lbl)}</text>
-        <text x="50" y="133" text-anchor="middle" font-family="Inter,Arial" font-size="3" letter-spacing=".7" fill="${ink}" opacity=".55">${p.servings} SERVINGS · SUPPLEMENT</text>
-        <path d="${body}" fill="url(#${u}cyl)"/>
-        <rect x="23" y="44" width="4" height="118" rx="2" fill="url(#${u}spec)"/>
-        <ellipse cx="50" cy="41" rx="30" ry="3" fill="#fff" opacity=".08"/>
-      </g>
-      <rect x="30" y="6" width="40" height="25" rx="3" fill="url(#${u}cap)"/>
-      ${ridges(30, 70, 9, 19, 2.6)}
-      <rect x="30" y="6" width="40" height="2" rx="1" fill="#fff" opacity=".12"/>
-    </svg>`;
+    return `<img src="img/${p.id}.webp" alt="Tropos ${esc(p.name)}, ${esc(p.kind)}" width="800" height="1000" loading="lazy" decoding="async">`;
   }
 
   function factsPanel(p) {
@@ -328,9 +230,9 @@
   }
 
   /* ───────────────────────── Cart state ───────────────────────── */
-  // line: { key, type: 'product'|'stack', id, qty, sub, freq }
+  // line: { key, type: 'product'|'stack'|'bundle', id, items?, qty, sub, freq }
   let cart = [];
-  try { cart = JSON.parse(localStorage.getItem("tropos-cart") || "[]").filter(l => (l.type === "product" ? P[l.id] : S[l.id])); } catch { cart = []; }
+  try { cart = JSON.parse(localStorage.getItem("tropos-cart") || "[]").filter(l => (l.type === "bundle" ? Array.isArray(l.items) && l.items.length && l.items.every(i => P[i]) : l.type === "product" ? P[l.id] : S[l.id])); } catch { cart = []; }
   const save = () => { try { localStorage.setItem("tropos-cart", JSON.stringify(cart)); } catch {} };
 
   function linePricing(l) {
@@ -339,21 +241,27 @@
       const each = l.sub ? full * (1 - SUB_OFF) : full;
       return { full: full * l.qty, now: each * l.qty };
     }
+    if (l.type === "bundle") {
+      const full = bundleBase(l.items);
+      const each = full * (1 - BUNDLE_OFF) * (l.sub ? 1 - STACK_SUB_OFF : 1);
+      return { full: full * l.qty, now: each * l.qty };
+    }
     const s = S[l.id];
     const full = stackBase(s);
     const each = stackPrice(s) * (l.sub ? 1 - STACK_SUB_OFF : 1);
     return { full: full * l.qty, now: each * l.qty };
   }
 
-  function addToCart(type, id, { sub = true, qty = 1, silent = false } = {}) {
-    const existing = cart.find(l => l.type === type && l.id === id && l.sub === sub);
+  function addToCart(type, id, { sub = true, qty = 1, silent = false, items } = {}) {
+    if (type === "bundle") cart = cart.filter(l => l.type !== "bundle"); // one personal bundle at a time
+    const existing = type !== "bundle" && cart.find(l => l.type === type && l.id === id && l.sub === sub);
     if (existing) existing.qty += qty;
-    else cart.push({ key: type + ":" + id + ":" + Date.now() + Math.random().toString(36).slice(2, 6), type, id, qty, sub, freq: 30 });
+    else cart.push({ key: type + ":" + id + ":" + Date.now() + Math.random().toString(36).slice(2, 6), type, id, items, qty, sub, freq: 30 });
     save();
     renderCart();
     const c = $("#cartCount");
     c.classList.remove("bump"); void c.offsetWidth; c.classList.add("bump");
-    if (!silent) toast(`${type === "product" ? P[id].name : S[id].name} added${sub ? " · subscribe & save" : ""}`);
+    if (!silent) toast(`${type === "product" ? P[id].name : type === "bundle" ? "Your bundle" : S[id].name} added${sub ? " · subscribe & save" : ""}`);
   }
 
   function renderCart() {
@@ -372,14 +280,14 @@
 
     const body = $("#cartItems");
     if (!cart.length) {
-      body.innerHTML = `<div class="empty"><h4>Your cart is empty</h4><p>Not sure where to start? The quiz takes about two minutes.</p><a href="#quiz" class="btn btn-primary btn-sm" data-close>Find my stack</a></div>`;
+      body.innerHTML = `<div class="empty"><h4>Your cart is empty</h4><p>Not sure where to start? The survey takes two minutes and builds your bundle for you.</p><a href="#quiz" class="btn btn-primary btn-sm" data-close>Take the survey</a></div>`;
       $("#cartFoot").innerHTML = "";
       return;
     }
 
     body.innerHTML = cart.map(l => {
       const isP = l.type === "product";
-      const item = isP ? P[l.id] : S[l.id];
+      const item = isP ? P[l.id] : l.type === "bundle" ? { name: "Your Tropos bundle", items: l.items } : S[l.id];
       const pr = linePricing(l);
       const sub = isP ? `${esc(item.kind)} · ${item.servings}-day supply` : item.items.map(i => P[i].name).join(" + ");
       const media = isP ? art(item) : art(P[item.items[0]]);
@@ -406,7 +314,7 @@
 
     $("#cartFoot").innerHTML = `
       <div class="sum-row"><span>Subtotal</span><span>${money2(full)}</span></div>
-      ${full > now ? `<div class="sum-row save"><span>Stack &amp; subscription savings</span><span>−${money2(full - now)}</span></div>` : ""}
+      ${full > now ? `<div class="sum-row save"><span>Bundle &amp; subscription savings</span><span>−${money2(full - now)}</span></div>` : ""}
       <div class="sum-row"><span>Shipping</span><span>${ship ? money2(ship) : "Free"}</span></div>
       <div class="sum-row total"><span>Total</span><span>${money2(now + ship)}</span></div>
       <button class="btn btn-primary btn-block" id="checkoutBtn">Checkout</button>
@@ -450,7 +358,7 @@
 
     $("#productGrid").innerHTML = PRODUCTS.map(p => `
       <article class="card" data-goals="${p.goals.join(" ")}">
-        <div class="card-media" data-open="${p.id}" role="button" tabindex="0" aria-label="View ${esc(p.name)} details">
+        <div class="card-media" style="background:${p.color}" data-open="${p.id}" role="button" tabindex="0" aria-label="View ${esc(p.name)} details">
           <span class="card-num">${p.num}</span>
           ${p.tag ? `<span class="card-tag">${p.tag}</span>` : ""}
           ${art(p)}
@@ -522,7 +430,7 @@
     panel.innerHTML = `
       <button class="icon-btn modal-close" data-close-modal aria-label="Close">✕</button>
       <div class="pd">
-        <div class="pd-media">${art(p)}<div class="pd-badges">${p.free.map(f => `<span>${esc(f)}</span>`).join("")}<span>3rd-party tested</span></div></div>
+        <div class="pd-media" style="background:${p.color}">${art(p)}<div class="pd-badges">${p.free.map(f => `<span>${esc(f)}</span>`).join("")}<span>3rd-party tested</span></div></div>
         <div class="pd-info">
           <p class="eyebrow">${p.num} · ${esc(p.kind)}</p>
           <h2 id="modalTitle">${esc(p.name)}</h2>
@@ -621,7 +529,7 @@
         <p class="q-error" aria-live="polite"></p>
         <div class="q-nav">
           <button type="button" class="q-back" data-q="back" ${i === 0 ? "disabled" : ""}>← Back</button>
-          <button type="button" class="btn btn-primary" data-q="next">${i === QUESTIONS.length - 1 ? "See my stack" : "Continue"} <span aria-hidden="true">→</span></button>
+          <button type="button" class="btn btn-primary" data-q="next">${i === QUESTIONS.length - 1 ? "Build my bundle" : "Continue"} <span aria-hidden="true">→</span></button>
         </div>
       </fieldset>`).join("");
     updateBar();
@@ -673,7 +581,7 @@
     const add = (id, pts, why) => { (r[id] ||= { score: 0, why: [] }); r[id].score += pts; if (why) r[id].why.push(why); };
 
     // Foundation: everyone's baseline
-    add("foundation", 3 + 3 * w("essentials"), has("essentials") ? "you want to <b>cover nutritional gaps</b>" : "it's the <b>foundation</b> every stack is built on");
+    add("foundation", 3 + 3 * w("essentials"), has("essentials") ? "you want to <b>cover nutritional gaps</b>" : "it's the <b>foundation</b> every bundle is built on");
     if (ex.includes("indoors")) add("foundation", 2, "you're <b>mostly indoors</b>, so vitamin D matters more");
     if (diet === "vegan" || diet === "veg") add("foundation", 1, `B12 is hard to get on a <b>${diet === "vegan" ? "vegan" : "vegetarian"}</b> diet`);
     if (age === "40s" || age === "50p") add("foundation", 1, "zinc and D3 needs rise <b>after 40</b>");
@@ -747,15 +655,16 @@
     const answers = Object.fromEntries(QUESTIONS.map(q => [q.name, values(q.name)]));
     const picks = recommend(answers);
     lastPicks = picks.map(p => p.id);
-    const full = picks.reduce((t, x) => t + P[x.id].price, 0);
-    const subTotal = full * (1 - SUB_OFF);
+    const full = bundleBase(lastPicks);
+    const once = full * (1 - BUNDLE_OFF);
+    const subTotal = once * (1 - STACK_SUB_OFF);
     const goalNames = answers.goals.map(g => GOALS[g].toLowerCase());
     const goalText = goalNames.length > 1 ? goalNames.slice(0, -1).join(", ") + " and " + goalNames.slice(-1) : goalNames[0];
 
     const notes = [];
-    if (answers.extras.includes("meds")) notes.push("Because you take prescription medication, please check this stack with your doctor before starting. Each product page lists its cautions.");
+    if (answers.extras.includes("meds")) notes.push("Because you take prescription medication, please check this bundle with your doctor before starting. Each product page lists its cautions.");
     if (answers.diet[0] === "veg" || answers.diet[0] === "vegan") notes.push("Omega is made from fish oil, so we've left it out. A vegan algae omega-3 is coming soon.");
-    if (answers.diet[0] === "vegan") notes.push("Protein is whey (dairy), so it's not included in your stack.");
+    if (answers.diet[0] === "vegan") notes.push("Protein is whey (dairy), so it's not included in your bundle.");
     if (answers.extras.includes("caffeine")) notes.push("We've left out Focus since you're caffeine-sensitive.");
     if (lastPicks.includes("ashwagandha")) notes.push("Calm (ashwagandha) isn't suitable with thyroid medication or autoimmune conditions.");
 
@@ -766,11 +675,11 @@
     res.innerHTML = `
       <div class="result-head">
         <div>
-          <p class="eyebrow">Your stack</p>
+          <p class="eyebrow">Your personal bundle</p>
           <h3>${picks.length} products for ${esc(goalText)}.</h3>
-          <p>Ranked by how closely each matches your answers. Start with the top ones if you'd rather go slow.</p>
+          <p>Ranked by how closely each matches your answers. Bought together they're ${Math.round(BUNDLE_OFF * 100)}% off, plus another ${Math.round(STACK_SUB_OFF * 100)}% when you subscribe.</p>
         </div>
-        <button class="q-back" data-restart>↺ Retake quiz</button>
+        <button class="q-back" data-restart>↺ Retake survey</button>
       </div>
       <div class="result-list">
         ${picks.map(x => {
@@ -784,15 +693,15 @@
               <p class="result-why">Because ${why}.</p>
               <button class="q-back" style="padding:4px 0 0;font-size:13px;text-decoration:underline" data-open="${p.id}">View label</button>
             </div>
-            <div class="result-price"><s>${money(p.price)}</s>${money2(p.price * (1 - SUB_OFF))}/mo</div>
+            <div class="result-price">${money(p.price)}</div>
           </div>`;
         }).join("")}
       </div>
       <div class="result-foot">
-        <div class="result-total"><strong>${money2(subTotal)}</strong>per month with subscription <s style="margin-left:6px">${money2(full)}</s></div>
+        <div class="result-total"><strong>${money2(subTotal)}</strong>per month with subscription <s style="margin-left:6px">${money2(full)}</s><br><span class="muted">or ${money2(once)} one-time · you save ${money2(full - subTotal)} a month</span></div>
         <div class="result-actions">
           <button class="btn btn-ghost" data-add-picks="0">Buy once</button>
-          <button class="btn btn-primary" data-add-picks="1">Subscribe to my stack →</button>
+          <button class="btn btn-primary" data-add-picks="1">Subscribe to my bundle →</button>
         </div>
       </div>
       ${notes.length ? `<div class="result-note">${notes.map(esc).join("<br>")}</div>` : ""}
@@ -810,14 +719,14 @@
     const b = e.target.closest("[data-add-picks]");
     if (b) {
       const sub = b.dataset.addPicks === "1";
-      lastPicks.forEach(id => addToCart("product", id, { sub, silent: true }));
-      toast(`${lastPicks.length} products added to your cart`);
+      addToCart("bundle", "personal", { sub, items: [...lastPicks], silent: true });
+      toast(`Your ${lastPicks.length}-product bundle is in your cart`);
       openCart();
     }
   });
 
   /* ───────────────────────── Misc ───────────────────────── */
-  $("#heroVisual").innerHTML = ["omega", "foundation", "creatine"].map(id => `<div class="hv">${art(P[id])}</div>`).join("");
+  $("#heroVisual").innerHTML = `<img src="img/group.webp" alt="The Tropos range: Creatine, Focus, Foundation, Magnesium and Protein" width="1985" height="592">`;
   $("#labelDemo").innerHTML = factsPanel(P.foundation);
 
   const burger = $("#burger"), links = $("#navLinks");
@@ -826,6 +735,19 @@
     burger.setAttribute("aria-expanded", open);
   });
   links.addEventListener("click", e => { if (e.target.tagName === "A") { links.classList.remove("open"); burger.setAttribute("aria-expanded", "false"); } });
+
+  // Floating survey prompt: visible after the hero, hidden while the survey is on screen or done
+  const floatCta = $("#floatCta");
+  const seen = { hero: true, quiz: false };
+  const syncFloat = () => floatCta.classList.toggle("show", !seen.hero && !seen.quiz && $("#quizResult").hidden);
+  if ("IntersectionObserver" in window) {
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(en => { seen[en.target.dataset.watch] = en.isIntersecting; });
+      syncFloat();
+    }, { threshold: 0.15 });
+    const hero = $(".hero"); hero.dataset.watch = "hero"; io.observe(hero);
+    const quiz = $("#quiz"); quiz.dataset.watch = "quiz"; io.observe(quiz);
+  }
 
   const nav = $("#nav");
   const onScroll = () => nav.classList.toggle("scrolled", window.scrollY > 8);
