@@ -3,9 +3,6 @@
   "use strict";
 
   /* ───────────────────────── Catalog ───────────────────────── */
-  const SUB_OFF = 0.20;        // subscribe & save on single products
-  const STACK_SUB_OFF = 0.10;  // extra off a stack/bundle when subscribed
-  const BUNDLE_OFF = 0.15;     // personal bundle built by the survey
 
   const GOALS = {
     strength:  "Strength",
@@ -235,26 +232,24 @@
   const money2 = n => "$" + n.toFixed(2);
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const bundleBase = (ids, doses = {}) => ids.reduce((t, id) => t + P[id].price * doseMult(id, doses[id]), 0);
-  const bundleOff = ids => (ids.length >= 2 ? BUNDLE_OFF : 0); // bundle pricing kicks in at 2+ products
-
-  /* Bundle plans. Plan discount applies on top of the bundle price. */
+  /* Plans: the only source of savings, for single products and bundles alike. */
   const PLANS = [
     { id: "once",    name: "One-time",          months: 1,  off: 0,    note: "1-month supply. No subscription." },
-    { id: "monthly", name: "Monthly",           months: 1,  off: 0.10, note: "Billed monthly. Skip or cancel any time." },
-    { id: "3",       name: "3 months upfront",  months: 3,  off: 0.15, note: "Billed every 3 months. Shipped monthly." },
-    { id: "6",       name: "6 months upfront",  months: 6,  off: 0.20, note: "Billed every 6 months. Shipped monthly." },
-    { id: "12",      name: "12 months upfront", months: 12, off: 0.25, note: "Billed yearly. Shipped monthly. Best value." },
+    { id: "monthly", name: "Monthly",           months: 1,  off: 0.15, note: "Billed monthly. Skip or cancel any time." },
+    { id: "3",       name: "3 months upfront",  months: 3,  off: 0.20, note: "Billed every 3 months. Shipped monthly." },
+    { id: "6",       name: "6 months upfront",  months: 6,  off: 0.30, note: "Billed every 6 months. Shipped monthly." },
+    { id: "12",      name: "12 months upfront", months: 12, off: 0.40, note: "Billed yearly. Shipped monthly. Best value." },
   ];
+  const MAX_OFF = Math.round(Math.max(...PLANS.map(p => p.off)) * 100);
   const PLAN = Object.fromEntries(PLANS.map(p => [p.id, p]));
   const planOf = l => PLAN[l.plan] ? l.plan : (l.sub ? "monthly" : "once");
   // Every number shown for a bundle comes from here
   function quote(ids, doses, planId) {
     const plan = PLAN[planId] || PLAN.monthly;
     const full = bundleBase(ids, doses);                 // all products at full price, 1 month
-    const bundleDisc = full * bundleOff(ids);
-    const planDisc = (full - bundleDisc) * plan.off;
-    const perMonth = full - bundleDisc - planDisc;
-    return { plan, full, bundleDisc, planDisc, perMonth, today: perMonth * plan.months, fullToday: full * plan.months,
+    const planDisc = full * plan.off;
+    const perMonth = full - planDisc;
+    return { plan, full, planDisc, perMonth, today: perMonth * plan.months, fullToday: full * plan.months,
              savedPct: full ? Math.round((1 - perMonth / full) * 100) : 0 };
   }
 
@@ -296,27 +291,21 @@
   const save = () => { try { localStorage.setItem("tropos-cart", JSON.stringify(cart)); } catch {} };
 
   function linePricing(l) {
-    if (l.type === "product") {
-      const full = P[l.id].price;
-      const each = l.sub ? full * (1 - SUB_OFF) : full;
-      return { full: full * l.qty, now: each * l.qty };
-    }
-    if (l.type === "bundle") {
-      const q = quote(l.items, l.doses || {}, planOf(l));
-      return { full: q.fullToday * l.qty, now: q.today * l.qty, q };
-    }
+    const q = l.type === "product" ? quote([l.id], {}, planOf(l)) : quote(l.items, l.doses || {}, planOf(l));
+    return { full: q.fullToday * l.qty, now: q.today * l.qty, q };
   }
 
   function addToCart(type, id, { sub = true, qty = 1, silent = false, items, doses, plan } = {}) {
     if (type === "bundle") cart = cart.filter(l => l.type !== "bundle"); // one personal bundle at a time
-    const existing = type !== "bundle" && cart.find(l => l.type === type && l.id === id && l.sub === sub);
+    plan = plan || (sub ? "monthly" : "once");
+    const existing = type !== "bundle" && cart.find(l => l.type === type && l.id === id && planOf(l) === plan);
     if (existing) existing.qty += qty;
-    else cart.push({ key: type + ":" + id + ":" + Date.now() + Math.random().toString(36).slice(2, 6), type, id, items, doses: doses || (items ? Object.fromEntries(items.map(i => [i, recDose(i, lastAnswers)])) : undefined), qty, sub, plan, freq: 30 });
+    else cart.push({ key: type + ":" + id + ":" + Date.now() + Math.random().toString(36).slice(2, 6), type, id, items, doses: doses || (items ? Object.fromEntries(items.map(i => [i, recDose(i, lastAnswers)])) : undefined), qty, sub: plan !== "once", plan, freq: 30 });
     save();
     renderCart();
     const c = $("#cartCount");
     c.classList.remove("bump"); void c.offsetWidth; c.classList.add("bump");
-    if (!silent) toast(`${type === "product" ? P[id].name : "Your bundle"} added${sub ? " · subscribe & save" : ""}`);
+    if (!silent) toast(`${type === "product" ? P[id].name : "Your bundle"} added · ${PLAN[plan].name}`);
   }
 
   const cartBundle = () => cart.find(l => l.type === "bundle");
@@ -333,7 +322,7 @@
     $("#cartCount").textContent = count;
 
     let full = 0, now = 0, anySub = false;
-    cart.forEach(l => { const pr = linePricing(l); full += pr.full; now += pr.now; if (l.type === "bundle" ? planOf(l) !== "once" : l.sub) anySub = true; });
+    cart.forEach(l => { const pr = linePricing(l); full += pr.full; now += pr.now; if (planOf(l) !== "once") anySub = true; });
 
     $("#shipMeter").innerHTML = `<strong>Free shipping</strong> on every order, always.`;
 
@@ -350,11 +339,11 @@
       const pr = linePricing(l);
       const others = isP ? [] : PRODUCTS.filter(p => !l.items.includes(p.id));
       const sub = isP ? `${esc(item.kind)} · ${item.servings}-day supply`
-        : `${l.items.length} product${l.items.length > 1 ? "s" : ""}${l.items.length < 2 ? " · add one more for 15% off" : " · 15% bundle pricing"}`;
+        : `${l.items.length} product${l.items.length > 1 ? "s" : ""}`;
       const bundleEdit = isP ? "" : `<ul class="bundle-items">${l.items.map(i => `<li><span>${esc(P[i].name)}</span>${doseSelect(i, doseIdx(i, (l.doses || {})[i]), recDose(i, lastAnswers), `data-act="bundle-dose" data-id="${i}" class="bi-dose"`)}<span class="bi-price">${money2(P[i].price * doseMult(i, (l.doses || {})[i]))}</span><button data-act="bundle-remove" data-id="${i}" aria-label="Remove ${esc(P[i].name)} from bundle">✕</button></li>`).join("")}</ul>
           ${others.length ? `<label class="bundle-add">+ <select data-act="bundle-add" aria-label="Add a product to your bundle"><option value="">Add a product to your bundle</option>${others.map(p => `<option value="${p.id}">${esc(p.name)} · ${esc(p.kind)} · ${money(p.price)}</option>`).join("")}</select></label>` : ""}`;
       const media = isP ? art(item) : art(P[item.items[0]]);
-      const offLabel = isP ? "Save 20%" : "Extra 10%";
+      const lineIds = isP ? [l.id] : l.items, lineDoses = isP ? {} : (l.doses || {});
       return `<div class="line" data-key="${l.key}">
         <div class="line-media">${media}</div>
         <div>
@@ -363,17 +352,13 @@
             <div class="line-price">${pr.full > pr.now ? `<s>${money2(pr.full)}</s>` : ""}${money2(pr.now)}</div>
           </div>
           ${bundleEdit}
-          ${isP ? `<div class="purchase-toggle" role="group" aria-label="Purchase type">
-            <button class="${l.sub ? "on" : ""}" data-act="sub" data-val="1">Subscribe · ${offLabel}</button>
-            <button class="${l.sub ? "" : "on"}" data-act="sub" data-val="0">One-time</button>
-          </div>` : `<label class="plan-select">Plan <select data-act="plan" aria-label="Bundle plan">${PLANS.map(p => {
-              const q = quote(l.items, l.doses || {}, p.id);
-              return `<option value="${p.id}" ${planOf(l) === p.id ? "selected" : ""}>${p.name} · ${money2(q.perMonth)}${p.id === "once" ? "" : "/mo"}</option>`;
+          <label class="plan-select">Plan <select data-act="plan" aria-label="Plan">${PLANS.map(p => {
+              const q = quote(lineIds, lineDoses, p.id);
+              return `<option value="${p.id}" ${planOf(l) === p.id ? "selected" : ""}>${p.name} · ${money2(q.perMonth)}${p.id === "once" ? "" : "/mo"}${p.off ? ` · ${Math.round(p.off * 100)}% off` : ""}</option>`;
             }).join("")}</select></label>
           <p class="plan-line">${(() => { const q = pr.q; return q.plan.months > 1
               ? `${money2(q.perMonth)}/mo × ${q.plan.months} months, charged today. ${q.plan.note}`
-              : q.plan.id === "once" ? `${money2(q.perMonth)} once. ${q.plan.note}` : `${money2(q.perMonth)} per month. ${q.plan.note}`; })()}</p>`}
-          ${isP && l.sub ? `<div class="freq">Deliver every <select data-act="freq" aria-label="Delivery frequency">${[30, 60, 90].map(d => `<option value="${d}" ${l.freq == d ? "selected" : ""}>${d} days</option>`).join("")}</select></div>` : ""}
+              : q.plan.id === "once" ? `${money2(q.perMonth)} once. ${q.plan.note}` : `${money2(q.perMonth)} per month. ${q.plan.note}`; })()}</p>
           <div class="line-controls">
             <div class="qty"><button data-act="dec" aria-label="Decrease">−</button><span>${l.qty}</span><button data-act="inc" aria-label="Increase">+</button></div>
             <button class="line-remove" data-act="remove">Remove</button>
@@ -383,8 +368,8 @@
     }).join("");
 
     $("#cartFoot").innerHTML = `
-      <div class="sum-row"><span>Items at full price</span><span>${money2(full)}</span></div>
-      ${full > now ? `<div class="sum-row save"><span>Your savings</span><span>−${money2(full - now)}</span></div>` : ""}
+      <div class="sum-row"><span>Full price</span><span>${money2(full)}</span></div>
+      ${full > now ? `<div class="sum-row save"><span>Subscription &amp; prepay savings</span><span>−${money2(full - now)}</span></div>` : ""}
       <div class="sum-row"><span>Shipping</span><span>Free</span></div>
       <div class="sum-row total"><span>Due today</span><span>${money2(now)}</span></div>
       <button class="btn btn-primary btn-block" id="checkoutBtn">Checkout</button>
@@ -455,7 +440,7 @@
         <div class="card-body">
           <div class="card-top">
             <h3>${esc(p.name)}</h3>
-            <div class="card-price">${money(p.price * (1 - SUB_OFF))}<small>or ${money(p.price)} once</small></div>
+            <div class="card-price">${money(p.price)}<small>from ${money2(p.price * (1 - MAX_OFF / 100))}/mo prepaid</small></div>
           </div>
           <p class="card-purpose">${esc(p.kind)}</p>
           <ul class="key-doses">${p.key.map(([k, v]) => `<li><span>${esc(k)}</span><span>${esc(v)}</span></li>`).join("")}</ul>
@@ -492,7 +477,7 @@
     exampleBundles = EXAMPLES.map(ex => recommend(ex.a).map(x => x.id));
     $("#stackGrid").innerHTML = EXAMPLES.map((ex, i) => {
       const items = exampleBundles[i];
-      const base = bundleBase(items), once = base * (1 - BUNDLE_OFF), sub = once * (1 - STACK_SUB_OFF);
+      const base = bundleBase(items), sub = quote(items, {}, "monthly").perMonth;
       return `<article class="stack">
         <div class="stack-top">
           <div><p class="example-label">Example survey result</p><h3>${esc(ex.who)}</h3>
@@ -502,7 +487,7 @@
         <div class="stack-bottles">${items.map(id => art(P[id])).join("")}</div>
         <ul class="stack-items">${items.map(id => `<li><span>${P[id].name} · ${esc(P[id].kind)}</span><span>${money(P[id].price)}</span></li>`).join("")}</ul>
         <div class="stack-foot">
-          <div class="stack-price"><strong>${money2(sub)}</strong><s>${money(base)}</s><small>per month as a personal bundle with subscription</small></div>
+          <div class="stack-price"><strong>${money2(sub)}</strong><s>${money(base)}</s><small>per month on a monthly subscription</small></div>
           <a href="#quiz" class="btn btn-primary btn-sm">Build mine →</a>
         </div>
       </article>`;
@@ -516,7 +501,8 @@
     if (!p) return;
     const bundle = cartBundle();
     const inBundle = bundle && bundle.items.includes(id);
-    modalMode = bundle && !inBundle ? "bundle" : "sub";
+    modalMode = bundle && !inBundle ? "bundle" : "monthly";
+    const bq = bundle ? quote([id], {}, planOf(bundle)) : null;
     const panel = $("#modalPanel");
     const pairs = exampleBundles.filter(b => b.includes(id)).flat().filter((x, i, a) => x !== id && a.indexOf(x) === i).slice(0, 3);
     panel.innerHTML = `
@@ -529,10 +515,10 @@
           <p class="pd-purpose">${esc(p.purpose)}</p>
           <ul class="pd-benefits">${p.benefits.map(b => `<li>${esc(b)}</li>`).join("")}</ul>
           <div class="buy-opts" role="radiogroup" aria-label="Purchase option">
-            ${bundle && !inBundle ? `<button class="buy-opt on" data-buy="bundle" role="radio" aria-checked="true"><span><strong>Add to my bundle</strong><small>Joins your personal bundle at 15% off, same delivery</small></span><span class="p"><s>${money(p.price)}</s>${money2(p.price * (1 - BUNDLE_OFF))}</span></button>` : ""}
+            ${bundle && !inBundle ? `<button class="buy-opt on" data-buy="bundle" role="radio" aria-checked="true"><span><strong>Add to my bundle</strong><small>Joins your bundle on its ${esc(bq.plan.name.toLowerCase())} plan</small></span><span class="p">${bq.planDisc ? `<s>${money(p.price)}</s>` : ""}${money2(bq.perMonth)}${bq.plan.id === "once" ? "" : "/mo"}</span></button>` : ""}
             ${inBundle ? `<p class="in-bundle">✓ Already in your bundle</p>` : ""}
-            <button class="buy-opt ${modalMode === "sub" ? "on" : ""}" data-buy="sub" role="radio" aria-checked="${modalMode === "sub"}"><span><strong>Subscribe &amp; save 20%</strong><small>Ships every 30 days · cancel any time</small></span><span class="p"><s>${money(p.price)}</s>${money2(p.price * (1 - SUB_OFF))}</span></button>
-            <button class="buy-opt" data-buy="once" role="radio" aria-checked="false"><span><strong>One-time purchase</strong><small>${p.servings}-day supply</small></span><span class="p">${money2(p.price)}</span></button>
+            ${PLANS.map(pl => { const q = quote([id], {}, pl.id); const on = modalMode === pl.id;
+              return `<button class="buy-opt ${on ? "on" : ""}" data-buy="${pl.id}" role="radio" aria-checked="${on}"><span><strong>${pl.name}${pl.off ? ` · save ${Math.round(pl.off * 100)}%` : ""}</strong><small>${pl.months > 1 ? `${money2(q.today)} today · ` : ""}${esc(pl.note)}</small></span><span class="p">${pl.off ? `<s>${money(p.price)}</s>` : ""}${money2(q.perMonth)}${pl.id === "once" ? "" : "/mo"}</span></button>`; }).join("")}
           </div>
           <button class="btn btn-primary btn-block" id="modalAdd">Add to cart</button>
           <div class="pd-tabs">
@@ -550,7 +536,7 @@
     panel.scrollTop = 0;
     $("#modalAdd").onclick = () => {
       if (modalMode === "bundle") addToBundle(id);
-      else addToCart("product", id, { sub: modalMode === "sub" });
+      else addToCart("product", id, { plan: modalMode });
       closeModal();
     };
     $(".modal-close", panel).focus();
@@ -854,7 +840,7 @@
           <p class="eyebrow">${n ? esc(n) + "'s" : "Your"} personal bundle</p>
           <h3>${n ? esc(n) + ", here are" : "Here are"} ${picks.length} products for ${esc(goalText)}.</h3>
           <p class="profile">${profile.map(t => `<span>${esc(t)}</span>`).join("")}</p>
-          <p>Ranked by how closely each matches your answers, with a starting dose set for you. Bought together they're ${Math.round(BUNDLE_OFF * 100)}% off, and your plan below can take up to another 25% off.</p>
+          <p>Ranked by how closely each matches your answers, with a starting dose set for you. Subscribe to save 15%, or pay upfront to save up to ${MAX_OFF}%.</p>
         </div>
         <button class="q-back" data-restart>↺ Retake survey</button>
       </div>
@@ -879,7 +865,7 @@
       </div>
       <div class="add-more">
         <h4>Customize your bundle</h4>
-        <p>Add anything else you'd like. Everything in your bundle gets the same discount. Doses start at what we'd recommend for you, and you can change them in your cart.</p>
+        <p>Add anything else you'd like. Your plan's savings apply to everything in your bundle. Doses start at what we'd recommend for you, and you can change them in your cart.</p>
         <div class="add-grid">
           ${PRODUCTS.filter(p => !lastPicks.includes(p.id)).map(p => {
             const warn = fitWarning(p.id, answers);
@@ -925,7 +911,6 @@
       return;
     }
     const q = quote(lastPicks, lastDoses, lastPlan);
-    const bundlePct = Math.round(bundleOff(lastPicks) * 100);
     foot.innerHTML = `
       <div class="plans">
         <h4>Choose your plan</h4>
@@ -945,11 +930,10 @@
       </div>
       <div class="breakdown">
         <div class="bd-row"><span>${n} product${n > 1 ? "s" : ""} at full price</span><span>${money2(q.full)}/mo</span></div>
-        ${q.bundleDisc ? `<div class="bd-row save"><span>Bundle discount (${bundlePct}%)</span><span>−${money2(q.bundleDisc)}</span></div>` : `<div class="bd-row muted"><span>Add one more product for 15% bundle pricing</span><span></span></div>`}
-        ${q.planDisc ? `<div class="bd-row save"><span>${q.plan.name} plan (extra ${Math.round(q.plan.off * 100)}%)</span><span>−${money2(q.planDisc)}</span></div>` : ""}
+        ${q.planDisc ? `<div class="bd-row save"><span>${q.plan.id === "monthly" ? "Monthly subscription" : q.plan.name} (${Math.round(q.plan.off * 100)}% off)</span><span>−${money2(q.planDisc)}</span></div>` : `<div class="bd-row muted"><span>Subscribe to save 15%, or prepay to save up to ${MAX_OFF}%</span><span></span></div>`}
         <div class="bd-row strong"><span>Your price per month</span><span>${money2(q.perMonth)}</span></div>
         <div class="bd-row total"><span>Due today${q.plan.months > 1 ? ` (${q.plan.months} months)` : ""}</span><span>${money2(q.today)}</span></div>
-        <p class="bd-foot">${q.savedPct ? `You save ${money2(q.full - q.perMonth)} a month (${q.savedPct}%) compared with buying each product separately.` : ""}</p>
+        <p class="bd-foot">${q.savedPct ? `You save ${money2(q.full - q.perMonth)} a month (${q.savedPct}%) compared with paying full price.` : ""}</p>
       </div>
       <div class="result-actions plan-actions">
         <button class="btn btn-primary btn-lg" data-add-picks="1">Add bundle to cart · ${money2(q.today)} →</button>
