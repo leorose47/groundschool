@@ -6,8 +6,6 @@
   const SUB_OFF = 0.20;        // subscribe & save on single products
   const STACK_SUB_OFF = 0.10;  // extra off a stack/bundle when subscribed
   const BUNDLE_OFF = 0.15;     // personal bundle built by the survey
-  const FREE_SHIP = 60;
-  const SHIPPING = 5.95;
 
   const GOALS = {
     strength:  "Strength",
@@ -239,6 +237,27 @@
   const bundleBase = (ids, doses = {}) => ids.reduce((t, id) => t + P[id].price * doseMult(id, doses[id]), 0);
   const bundleOff = ids => (ids.length >= 2 ? BUNDLE_OFF : 0); // bundle pricing kicks in at 2+ products
 
+  /* Bundle plans. Plan discount applies on top of the bundle price. */
+  const PLANS = [
+    { id: "once",    name: "One-time",          months: 1,  off: 0,    note: "1-month supply. No subscription." },
+    { id: "monthly", name: "Monthly",           months: 1,  off: 0.10, note: "Billed monthly. Skip or cancel any time." },
+    { id: "3",       name: "3 months upfront",  months: 3,  off: 0.15, note: "Billed every 3 months. Shipped monthly." },
+    { id: "6",       name: "6 months upfront",  months: 6,  off: 0.20, note: "Billed every 6 months. Shipped monthly." },
+    { id: "12",      name: "12 months upfront", months: 12, off: 0.25, note: "Billed yearly. Shipped monthly. Best value." },
+  ];
+  const PLAN = Object.fromEntries(PLANS.map(p => [p.id, p]));
+  const planOf = l => PLAN[l.plan] ? l.plan : (l.sub ? "monthly" : "once");
+  // Every number shown for a bundle comes from here
+  function quote(ids, doses, planId) {
+    const plan = PLAN[planId] || PLAN.monthly;
+    const full = bundleBase(ids, doses);                 // all products at full price, 1 month
+    const bundleDisc = full * bundleOff(ids);
+    const planDisc = (full - bundleDisc) * plan.off;
+    const perMonth = full - bundleDisc - planDisc;
+    return { plan, full, bundleDisc, planDisc, perMonth, today: perMonth * plan.months, fullToday: full * plan.months,
+             savedPct: full ? Math.round((1 - perMonth / full) * 100) : 0 };
+  }
+
   let toastTimer;
   function toast(msg) {
     const t = $("#toast");
@@ -283,17 +302,16 @@
       return { full: full * l.qty, now: each * l.qty };
     }
     if (l.type === "bundle") {
-      const full = bundleBase(l.items, l.doses || {});
-      const each = full * (1 - bundleOff(l.items)) * (l.sub ? 1 - STACK_SUB_OFF : 1);
-      return { full: full * l.qty, now: each * l.qty };
+      const q = quote(l.items, l.doses || {}, planOf(l));
+      return { full: q.fullToday * l.qty, now: q.today * l.qty, q };
     }
   }
 
-  function addToCart(type, id, { sub = true, qty = 1, silent = false, items, doses } = {}) {
+  function addToCart(type, id, { sub = true, qty = 1, silent = false, items, doses, plan } = {}) {
     if (type === "bundle") cart = cart.filter(l => l.type !== "bundle"); // one personal bundle at a time
     const existing = type !== "bundle" && cart.find(l => l.type === type && l.id === id && l.sub === sub);
     if (existing) existing.qty += qty;
-    else cart.push({ key: type + ":" + id + ":" + Date.now() + Math.random().toString(36).slice(2, 6), type, id, items, doses: doses || (items ? Object.fromEntries(items.map(i => [i, recDose(i, lastAnswers)])) : undefined), qty, sub, freq: 30 });
+    else cart.push({ key: type + ":" + id + ":" + Date.now() + Math.random().toString(36).slice(2, 6), type, id, items, doses: doses || (items ? Object.fromEntries(items.map(i => [i, recDose(i, lastAnswers)])) : undefined), qty, sub, plan, freq: 30 });
     save();
     renderCart();
     const c = $("#cartCount");
@@ -304,7 +322,7 @@
   const cartBundle = () => cart.find(l => l.type === "bundle");
   function addToBundle(id) {
     const b = cartBundle();
-    if (!b) return addToCart("bundle", "personal", { items: [id] });
+    if (!b) return addToCart("bundle", "personal", { items: [id], plan: "monthly" });
     if (!b.items.includes(id)) { b.items.push(id); (b.doses ||= {})[id] = recDose(id, lastAnswers); }
     save(); renderCart();
     toast(`${P[id].name} added to your bundle`);
@@ -315,14 +333,9 @@
     $("#cartCount").textContent = count;
 
     let full = 0, now = 0, anySub = false;
-    cart.forEach(l => { const pr = linePricing(l); full += pr.full; now += pr.now; if (l.sub) anySub = true; });
-    const freeShip = anySub || now >= FREE_SHIP;
-    const ship = cart.length === 0 || freeShip ? 0 : SHIPPING;
+    cart.forEach(l => { const pr = linePricing(l); full += pr.full; now += pr.now; if (l.type === "bundle" ? planOf(l) !== "once" : l.sub) anySub = true; });
 
-    const meter = $("#shipMeter");
-    if (!cart.length) meter.innerHTML = `Free shipping on subscriptions and orders over ${money(FREE_SHIP)}.`;
-    else if (freeShip) meter.innerHTML = `<strong>You've unlocked free shipping.</strong><div class="bar"><div style="width:100%"></div></div>`;
-    else meter.innerHTML = `You're <strong>${money2(FREE_SHIP - now)}</strong> away from free shipping. Or subscribe to any item.<div class="bar"><div style="width:${Math.min(100, (now / FREE_SHIP) * 100)}%"></div></div>`;
+    $("#shipMeter").innerHTML = `<strong>Free shipping</strong> on every order, always.`;
 
     const body = $("#cartItems");
     if (!cart.length) {
@@ -350,11 +363,17 @@
             <div class="line-price">${pr.full > pr.now ? `<s>${money2(pr.full)}</s>` : ""}${money2(pr.now)}</div>
           </div>
           ${bundleEdit}
-          <div class="purchase-toggle" role="group" aria-label="Purchase type">
+          ${isP ? `<div class="purchase-toggle" role="group" aria-label="Purchase type">
             <button class="${l.sub ? "on" : ""}" data-act="sub" data-val="1">Subscribe · ${offLabel}</button>
             <button class="${l.sub ? "" : "on"}" data-act="sub" data-val="0">One-time</button>
-          </div>
-          ${l.sub ? `<div class="freq">Deliver every <select data-act="freq" aria-label="Delivery frequency">${[30, 60, 90].map(d => `<option value="${d}" ${l.freq == d ? "selected" : ""}>${d} days</option>`).join("")}</select></div>` : ""}
+          </div>` : `<label class="plan-select">Plan <select data-act="plan" aria-label="Bundle plan">${PLANS.map(p => {
+              const q = quote(l.items, l.doses || {}, p.id);
+              return `<option value="${p.id}" ${planOf(l) === p.id ? "selected" : ""}>${p.name} · ${money2(q.perMonth)}${p.id === "once" ? "" : "/mo"}</option>`;
+            }).join("")}</select></label>
+          <p class="plan-line">${(() => { const q = pr.q; return q.plan.months > 1
+              ? `${money2(q.perMonth)}/mo × ${q.plan.months} months, charged today. ${q.plan.note}`
+              : q.plan.id === "once" ? `${money2(q.perMonth)} once. ${q.plan.note}` : `${money2(q.perMonth)} per month. ${q.plan.note}`; })()}</p>`}
+          ${isP && l.sub ? `<div class="freq">Deliver every <select data-act="freq" aria-label="Delivery frequency">${[30, 60, 90].map(d => `<option value="${d}" ${l.freq == d ? "selected" : ""}>${d} days</option>`).join("")}</select></div>` : ""}
           <div class="line-controls">
             <div class="qty"><button data-act="dec" aria-label="Decrease">−</button><span>${l.qty}</span><button data-act="inc" aria-label="Increase">+</button></div>
             <button class="line-remove" data-act="remove">Remove</button>
@@ -364,10 +383,10 @@
     }).join("");
 
     $("#cartFoot").innerHTML = `
-      <div class="sum-row"><span>Subtotal</span><span>${money2(full)}</span></div>
-      ${full > now ? `<div class="sum-row save"><span>Bundle &amp; subscription savings</span><span>−${money2(full - now)}</span></div>` : ""}
-      <div class="sum-row"><span>Shipping</span><span>${ship ? money2(ship) : "Free"}</span></div>
-      <div class="sum-row total"><span>Total</span><span>${money2(now + ship)}</span></div>
+      <div class="sum-row"><span>Items at full price</span><span>${money2(full)}</span></div>
+      ${full > now ? `<div class="sum-row save"><span>Your savings</span><span>−${money2(full - now)}</span></div>` : ""}
+      <div class="sum-row"><span>Shipping</span><span>Free</span></div>
+      <div class="sum-row total"><span>Due today</span><span>${money2(now)}</span></div>
       <button class="btn btn-primary btn-block" id="checkoutBtn">Checkout</button>
       <p class="fine">${anySub ? "Subscriptions renew automatically. Skip, pause or cancel any time." : "30-day money-back guarantee on your first order."}</p>`;
   }
@@ -392,6 +411,11 @@
     if (e.target.dataset.act === "bundle-add" && e.target.value) {
       const line = cart.find(l => l.key === e.target.closest(".line").dataset.key);
       if (line && !line.items.includes(e.target.value)) { line.items.push(e.target.value); (line.doses ||= {})[e.target.value] = recDose(e.target.value, lastAnswers); save(); renderCart(); }
+      return;
+    }
+    if (e.target.dataset.act === "plan") {
+      const line = cart.find(l => l.key === e.target.closest(".line").dataset.key);
+      if (line) { line.plan = e.target.value; line.sub = line.plan !== "once"; save(); renderCart(); }
       return;
     }
     if (e.target.dataset.act === "bundle-dose") {
@@ -507,7 +531,7 @@
           <div class="buy-opts" role="radiogroup" aria-label="Purchase option">
             ${bundle && !inBundle ? `<button class="buy-opt on" data-buy="bundle" role="radio" aria-checked="true"><span><strong>Add to my bundle</strong><small>Joins your personal bundle at 15% off, same delivery</small></span><span class="p"><s>${money(p.price)}</s>${money2(p.price * (1 - BUNDLE_OFF))}</span></button>` : ""}
             ${inBundle ? `<p class="in-bundle">✓ Already in your bundle</p>` : ""}
-            <button class="buy-opt ${modalMode === "sub" ? "on" : ""}" data-buy="sub" role="radio" aria-checked="${modalMode === "sub"}"><span><strong>Subscribe &amp; save 20%</strong><small>Ships every 30 days · free shipping · cancel any time</small></span><span class="p"><s>${money(p.price)}</s>${money2(p.price * (1 - SUB_OFF))}</span></button>
+            <button class="buy-opt ${modalMode === "sub" ? "on" : ""}" data-buy="sub" role="radio" aria-checked="${modalMode === "sub"}"><span><strong>Subscribe &amp; save 20%</strong><small>Ships every 30 days · cancel any time</small></span><span class="p"><s>${money(p.price)}</s>${money2(p.price * (1 - SUB_OFF))}</span></button>
             <button class="buy-opt" data-buy="once" role="radio" aria-checked="false"><span><strong>One-time purchase</strong><small>${p.servings}-day supply</small></span><span class="p">${money2(p.price)}</span></button>
           </div>
           <button class="btn btn-primary btn-block" id="modalAdd">Add to cart</button>
@@ -783,6 +807,7 @@
 
   let lastPicks = [];       // current selection on the result screen
   let lastDoses = {};
+  let lastPlan = "monthly";
   let lastAnswers = null;
   function showResult() {
     const res = $("#quizResult");
@@ -829,7 +854,7 @@
           <p class="eyebrow">${n ? esc(n) + "'s" : "Your"} personal bundle</p>
           <h3>${n ? esc(n) + ", here are" : "Here are"} ${picks.length} products for ${esc(goalText)}.</h3>
           <p class="profile">${profile.map(t => `<span>${esc(t)}</span>`).join("")}</p>
-          <p>Ranked by how closely each matches your answers, with a starting dose set for you. Bought together they're ${Math.round(BUNDLE_OFF * 100)}% off, plus another ${Math.round(STACK_SUB_OFF * 100)}% when you subscribe.</p>
+          <p>Ranked by how closely each matches your answers, with a starting dose set for you. Bought together they're ${Math.round(BUNDLE_OFF * 100)}% off, and your plan below can take up to another 25% off.</p>
         </div>
         <button class="q-back" data-restart>↺ Retake survey</button>
       </div>
@@ -896,16 +921,38 @@
     const n = lastPicks.length;
     if (!n) {
       foot.innerHTML = `<div class="result-total"><strong>Empty bundle</strong><br><span class="muted">Add at least one product to continue.</span></div>
-        <div class="result-actions"><button class="btn btn-primary" disabled>Subscribe to my bundle →</button></div>`;
+        <div class="result-actions"><button class="btn btn-primary" disabled>Add bundle to cart →</button></div>`;
       return;
     }
-    const full = bundleBase(lastPicks, lastDoses), off = bundleOff(lastPicks);
-    const once = full * (1 - off), subTotal = once * (1 - STACK_SUB_OFF);
-    foot.innerHTML = `<div class="result-total"><strong>${money2(subTotal)}</strong>per month with subscription <s style="margin-left:6px">${money2(full)}</s>
-        <br><span class="muted">${n} product${n > 1 ? "s" : ""} · or ${money2(once)} one-time${off ? ` · you save ${money2(full - subTotal)} a month` : " · add one more product for 15% bundle pricing"}</span></div>
-      <div class="result-actions">
-        <button class="btn btn-ghost" data-add-picks="0">Buy once</button>
-        <button class="btn btn-primary" data-add-picks="1">Subscribe to my bundle →</button>
+    const q = quote(lastPicks, lastDoses, lastPlan);
+    const bundlePct = Math.round(bundleOff(lastPicks) * 100);
+    foot.innerHTML = `
+      <div class="plans">
+        <h4>Choose your plan</h4>
+        <div class="plan-grid" role="radiogroup" aria-label="Plan">
+          ${PLANS.map(p => {
+            const pq = quote(lastPicks, lastDoses, p.id);
+            return `<button class="plan ${p.id === lastPlan ? "on" : ""}" data-plan="${p.id}" role="radio" aria-checked="${p.id === lastPlan}">
+              ${p.id === "12" ? `<span class="plan-flag">Best value</span>` : p.id === "monthly" ? `<span class="plan-flag">Most flexible</span>` : ""}
+              <strong>${p.name}</strong>
+              <span class="plan-price">${money2(pq.perMonth)}<small>${p.id === "once" ? "" : "/mo"}</small></span>
+              <span class="plan-today">${p.months > 1 ? `${money2(pq.today)} today` : p.id === "once" ? "1-month supply" : "Billed monthly"}</span>
+              <span class="plan-save">${pq.savedPct ? `Save ${pq.savedPct}%` : "Full price"}</span>
+            </button>`;
+          }).join("")}
+        </div>
+        <p class="plan-note">${esc(q.plan.note)}</p>
+      </div>
+      <div class="breakdown">
+        <div class="bd-row"><span>${n} product${n > 1 ? "s" : ""} at full price</span><span>${money2(q.full)}/mo</span></div>
+        ${q.bundleDisc ? `<div class="bd-row save"><span>Bundle discount (${bundlePct}%)</span><span>−${money2(q.bundleDisc)}</span></div>` : `<div class="bd-row muted"><span>Add one more product for 15% bundle pricing</span><span></span></div>`}
+        ${q.planDisc ? `<div class="bd-row save"><span>${q.plan.name} plan (extra ${Math.round(q.plan.off * 100)}%)</span><span>−${money2(q.planDisc)}</span></div>` : ""}
+        <div class="bd-row strong"><span>Your price per month</span><span>${money2(q.perMonth)}</span></div>
+        <div class="bd-row total"><span>Due today${q.plan.months > 1 ? ` (${q.plan.months} months)` : ""}</span><span>${money2(q.today)}</span></div>
+        <p class="bd-foot">${q.savedPct ? `You save ${money2(q.full - q.perMonth)} a month (${q.savedPct}%) compared with buying each product separately.` : ""}</p>
+      </div>
+      <div class="result-actions plan-actions">
+        <button class="btn btn-primary btn-lg" data-add-picks="1">Add bundle to cart · ${money2(q.today)} →</button>
       </div>`;
   }
 
@@ -924,6 +971,8 @@
       updateBar();
       return;
     }
+    const pl = e.target.closest("[data-plan]");
+    if (pl) { lastPlan = pl.dataset.plan; updateResultFoot(); return; }
     const t = e.target.closest("[data-toggle-item]");
     if (t) {
       const id = t.dataset.toggleItem;
@@ -933,8 +982,7 @@
     }
     const b = e.target.closest("[data-add-picks]");
     if (b && !b.disabled && lastPicks.length) {
-      const sub = b.dataset.addPicks === "1";
-      addToCart("bundle", "personal", { sub, items: [...lastPicks], doses: Object.fromEntries(lastPicks.map(i => [i, lastDoses[i]])), silent: true });
+      addToCart("bundle", "personal", { sub: lastPlan !== "once", plan: lastPlan, items: [...lastPicks], doses: Object.fromEntries(lastPicks.map(i => [i, lastDoses[i]])), silent: true });
       toast(`Your ${lastPicks.length}-product bundle is in your cart`);
       openCart();
     }
