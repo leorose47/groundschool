@@ -511,3 +511,11 @@ a.how-step p { color: #bdbdbb; }
 .float-cta.show { transform: none; opacity: 1; }
 @media (max-width: 600px) { .float-cta { left: 16px; right: 16px; bottom: 16px; text-align: center; } }
 .result-total .muted { font-size: 13px; }
+
+/* Example bundles */
+.stacks-section .btn-primary { background: var(--accent-ink); color: var(--ink); }
+.stacks-section .btn-primary:hover { background: #fff; }
+.stacks-cta { flex: none; }
+.example-label { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: #9a9a98; margin-bottom: 8px; }
+.stack-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.stack-tags span { font-size: 12px; padding: 4px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,.18); color: #d6d6d4; }
