@@ -246,6 +246,7 @@
       pitch: "Decide once and stop thinking about it. A full year of consistency at your lowest price, locked in." },
   ];
   const MAX_OFF = Math.round(Math.max(...PLANS.map(p => p.off)) * 100);
+  const PERK = "Free weekly pill organizer with your 2nd delivery";
   const PLAN = Object.fromEntries(PLANS.map(p => [p.id, p]));
   const planOf = l => PLAN[l.plan] ? l.plan : (l.sub ? "monthly" : "once");
   // Every number shown for a bundle comes from here
@@ -364,6 +365,7 @@
           <p class="plan-line">${(() => { const q = pr.q; return q.plan.months > 1
               ? `${money2(q.perMonth)}/mo × ${q.plan.months} months, charged today. ${q.plan.note}`
               : q.plan.id === "once" ? `${money2(q.perMonth)} once. ${q.plan.note}` : `${money2(q.perMonth)} per month. ${q.plan.note}`; })()}</p>
+          ${planOf(l) !== "once" ? `<p class="perk-line">+ ${PERK}.</p>` : ""}
           ${pr.q.plan.months === 1 ? (() => { const up = quote(lineIds, lineDoses, "6");
             return `<button class="cart-nudge" data-act="plan-up" data-val="6">Stay consistent: 6 months upfront is ${money2(up.perMonth * l.qty)}/mo, ${money2((pr.q.perMonth - up.perMonth) * l.qty)} less →</button>`; })() : ""}
           <div class="line-controls">
@@ -380,7 +382,7 @@
       <div class="sum-row"><span>Shipping</span><span>Free</span></div>
       <div class="sum-row total"><span>Due today</span><span>${money2(now)}</span></div>
       <button class="btn btn-primary btn-block" id="checkoutBtn">Checkout</button>
-      <p class="fine">${anySub ? "Subscriptions renew automatically. Skip, pause or cancel any time." : "30-day money-back guarantee on your first order."}</p>`;
+      <p class="fine">${anySub ? "Subscriptions renew automatically. Skip, pause or cancel any time. Your free pill organizer ships with your 2nd delivery." : "30-day money-back guarantee on your first order."}</p>`;
   }
 
   $("#cartItems").addEventListener("click", e => {
@@ -528,6 +530,7 @@
             ${PLANS.map(pl => { const q = quote([id], {}, pl.id); const on = modalMode === pl.id;
               return `<button class="buy-opt ${on ? "on" : ""}" data-buy="${pl.id}" role="radio" aria-checked="${on}"><span><strong>${pl.name}${pl.off ? ` · save ${Math.round(pl.off * 100)}%` : ""}</strong><small>${pl.months > 1 ? `${money2(q.today)} today · ` : ""}${esc(pl.note)}</small></span><span class="p">${pl.off ? `<s>${money(p.price)}</s>` : ""}${money2(q.perMonth)}${pl.id === "once" ? "" : "/mo"}</span></button>`; }).join("")}
           </div>
+          <p class="perk-note">+ Subscribe on any plan and get a free weekly pill organizer with your 2nd delivery.</p>
           <button class="btn btn-primary btn-block" id="modalAdd">Add to cart</button>
           <div class="pd-tabs">
             <details open><summary>Supplement facts</summary><div class="tab-body">${factsPanel(p)}</div></details>
@@ -931,6 +934,7 @@
               <span class="plan-price">${money2(pq.perMonth)}<small>${p.id === "once" ? "" : "/mo"}</small></span>
               <span class="plan-today">${p.months > 1 ? `${money2(pq.today)} today` : p.id === "once" ? "1-month supply" : "Billed monthly"}</span>
               <span class="plan-save">${pq.savedPct ? `Save ${pq.savedPct}%` : "Full price"}</span>
+              ${p.id !== "once" ? `<span class="plan-perk">+ Free organizer</span>` : ""}
             </button>`;
           }).join("")}
         </div>
@@ -951,6 +955,7 @@
       <div class="breakdown">
         <div class="bd-row"><span>${n} product${n > 1 ? "s" : ""} at full price</span><span>${money2(q.full)}/mo</span></div>
         ${q.planDisc ? `<div class="bd-row save"><span>${q.plan.id === "monthly" ? "Monthly subscription" : q.plan.name} (${Math.round(q.plan.off * 100)}% off)</span><span>−${money2(q.planDisc)}</span></div>` : `<div class="bd-row muted"><span>Subscribe to save 15%, or prepay to save up to ${MAX_OFF}%</span><span></span></div>`}
+        ${q.plan.id !== "once" ? `<div class="bd-row save"><span>Weekly pill organizer, with your 2nd delivery</span><span>Free</span></div>` : ""}
         <div class="bd-row strong"><span>Your price per month</span><span>${money2(q.perMonth)}</span></div>
         <div class="bd-row total"><span>Due today${q.plan.months > 1 ? ` (${q.plan.months} months)` : ""}</span><span>${money2(q.today)}</span></div>
         <p class="bd-foot">${q.savedPct ? `You save ${money2(q.full - q.perMonth)} a month (${q.savedPct}%) compared with paying full price.` : ""}</p>
