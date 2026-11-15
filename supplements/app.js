@@ -234,11 +234,16 @@
   const bundleBase = (ids, doses = {}) => ids.reduce((t, id) => t + P[id].price * doseMult(id, doses[id]), 0);
   /* Plans: the only source of savings, for single products and bundles alike. */
   const PLANS = [
-    { id: "once",    name: "One-time",          months: 1,  off: 0,    note: "1-month supply. No subscription." },
-    { id: "monthly", name: "Monthly",           months: 1,  off: 0.15, note: "Billed monthly. Skip or cancel any time." },
-    { id: "3",       name: "3 months upfront",  months: 3,  off: 0.20, note: "Billed every 3 months. Shipped monthly." },
-    { id: "6",       name: "6 months upfront",  months: 6,  off: 0.30, note: "Billed every 6 months. Shipped monthly." },
-    { id: "12",      name: "12 months upfront", months: 12, off: 0.40, note: "Billed yearly. Shipped monthly. Best value." },
+    { id: "once",    name: "One-time",          months: 1,  off: 0,    note: "1-month supply. No subscription.",
+      pitch: "Fine for a trial, but one month is rarely enough. Most supplements need weeks of daily use before you feel a difference." },
+    { id: "monthly", name: "Monthly",           months: 1,  off: 0.15, note: "Billed monthly. Skip or cancel any time.",
+      pitch: "Flexible, but every month is a new chance to skip. A paused box is usually where the habit breaks." },
+    { id: "3",       name: "3 months upfront",  months: 3,  off: 0.20, note: "Billed every 3 months. Shipped monthly.",
+      pitch: "12 weeks matches the length of most supplement studies. Enough time to actually see what your bundle does for you." },
+    { id: "6",       name: "6 months upfront",  months: 6,  off: 0.30, note: "Billed every 6 months. Shipped monthly.",
+      pitch: "Half a year of showing up. Long enough for the routine to become automatic, with no monthly decision to quit." },
+    { id: "12",      name: "12 months upfront", months: 12, off: 0.40, note: "Billed yearly. Shipped monthly. Best value.",
+      pitch: "Decide once and stop thinking about it. A full year of consistency at your lowest price, locked in." },
   ];
   const MAX_OFF = Math.round(Math.max(...PLANS.map(p => p.off)) * 100);
   const PLAN = Object.fromEntries(PLANS.map(p => [p.id, p]));
@@ -359,6 +364,8 @@
           <p class="plan-line">${(() => { const q = pr.q; return q.plan.months > 1
               ? `${money2(q.perMonth)}/mo × ${q.plan.months} months, charged today. ${q.plan.note}`
               : q.plan.id === "once" ? `${money2(q.perMonth)} once. ${q.plan.note}` : `${money2(q.perMonth)} per month. ${q.plan.note}`; })()}</p>
+          ${pr.q.plan.months === 1 ? (() => { const up = quote(lineIds, lineDoses, "6");
+            return `<button class="cart-nudge" data-act="plan-up" data-val="6">Stay consistent: 6 months upfront is ${money2(up.perMonth * l.qty)}/mo, ${money2((pr.q.perMonth - up.perMonth) * l.qty)} less →</button>`; })() : ""}
           <div class="line-controls">
             <div class="qty"><button data-act="dec" aria-label="Decrease">−</button><span>${l.qty}</span><button data-act="inc" aria-label="Increase">+</button></div>
             <button class="line-remove" data-act="remove">Remove</button>
@@ -386,6 +393,7 @@
     if (act === "dec") line.qty = Math.max(1, line.qty - 1);
     if (act === "remove") cart = cart.filter(l => l !== line);
     if (act === "sub") line.sub = btn.dataset.val === "1";
+    if (act === "plan-up") { line.plan = btn.dataset.val; line.sub = true; }
     if (act === "bundle-remove") {
       line.items = line.items.filter(i => i !== btn.dataset.id);
       if (!line.items.length) cart = cart.filter(l => l !== line);
@@ -927,6 +935,18 @@
           }).join("")}
         </div>
         <p class="plan-note">${esc(q.plan.note)}</p>
+        <div class="plan-pitch ${q.plan.months > 1 ? "is-upfront" : ""}"><strong>${q.plan.months > 1 ? "Built for consistency." : "Worth knowing."}</strong> ${esc(q.plan.pitch)}
+          ${q.plan.months === 1 ? (() => { const up = quote(lastPicks, lastDoses, "3");
+            return `<button class="plan-nudge" data-plan="3">Switch to 3 months upfront: ${money2(q.perMonth - up.perMonth)} less per month →</button>`; })() : ""}
+        </div>
+        <details class="why-upfront">
+          <summary>Why pay upfront?</summary>
+          <ul>
+            <li><strong>Consistency is what works.</strong> Creatine takes around 3–4 weeks of daily use to fully saturate your muscles, and most studies on ingredients like ashwagandha and omega-3 run 8–12 weeks. Results come from the days you don't skip.</li>
+            <li><strong>Decide once.</strong> Paying upfront turns a good intention into a commitment. No monthly "do I really need this?" moment, no running out and forgetting to reorder.</li>
+            <li><strong>Your best price, locked in.</strong> Up to ${MAX_OFF}% off for the whole term, still shipped fresh every month, and you can still change doses or swap products.</li>
+          </ul>
+        </details>
       </div>
       <div class="breakdown">
         <div class="bd-row"><span>${n} product${n > 1 ? "s" : ""} at full price</span><span>${money2(q.full)}/mo</span></div>

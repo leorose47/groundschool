@@ -619,3 +619,20 @@ a.how-step p { color: #bdbdbb; }
 
 .line > div { min-width: 0; }
 .plan-select select, .bundle-add select { width: 100%; }
+
+/* Upfront motivation */
+.plan-pitch { margin-top: 14px; padding: 14px 16px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); font-size: 14px; color: var(--ink-2); }
+.plan-pitch strong { color: var(--ink); }
+.plan-pitch.is-upfront { background: var(--ink); color: #d8d8d6; border-color: var(--ink); }
+.plan-pitch.is-upfront strong { color: #fff; }
+.plan-nudge { display: block; margin-top: 10px; font-size: 13px; font-weight: 600; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; padding: 0; }
+.why-upfront { margin-top: 10px; }
+.why-upfront summary { cursor: pointer; font-size: 14px; font-weight: 600; padding: 6px 0; }
+.why-upfront ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 8px; font-size: 14px; color: var(--ink-2); }
+.why-upfront li strong { color: var(--ink); }
+.cart-nudge { display: block; width: 100%; margin-top: 8px; padding: 9px 12px; border-radius: 10px; border: 1px dashed #b9b9b7; background: var(--surface); font-size: 12px; font-weight: 600; text-align: left; color: var(--ink); }
+.cart-nudge:hover { border-style: solid; border-color: var(--ink); }
+.prepay-why { margin-top: 32px; padding: 20px 22px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line); }
+.prepay-why .eyebrow { margin-bottom: 8px; }
+.prepay-why p:last-child { color: var(--ink-2); font-size: 15px; }
+.prepay-why strong { color: var(--ink); }
