@@ -535,3 +535,54 @@ a.how-step p { color: #bdbdbb; }
 .profile { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px !important; }
 .profile span { font-size: 12px; padding: 4px 10px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); }
 @media (max-width: 700px) { .building { padding: 56px 20px; } }
+
+/* Editable bundle */
+.result-side { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.pick-toggle { font-size: 13px; font-weight: 600; padding: 7px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); white-space: nowrap; }
+.pick-toggle:hover { border-color: var(--ink); }
+.pick-toggle[aria-pressed="false"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.result-item.is-off .mini, .result-item.is-off h4, .result-item.is-off .result-why, .result-item.is-off .match, .result-item.is-off .result-price { opacity: .38; }
+.result-item.is-off h4 { text-decoration: line-through; }
+.result-item.is-off .pick-toggle { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.add-more { padding: 28px 0 8px; border-bottom: 1px solid var(--line); }
+.add-more h4 { font-family: var(--serif); font-weight: 400; font-size: 24px; margin: 0; }
+.add-more > p { color: var(--ink-2); font-size: 14px; margin: 6px 0 18px; }
+.add-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.add-card { display: grid; grid-template-columns: 52px 1fr auto; gap: 14px; align-items: center; padding: 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+.add-card .mini { width: 52px; border-radius: 8px; background: var(--surface-2); overflow: hidden; }
+.add-card .mini img { width: 100%; height: auto; }
+.add-card.is-added { border-color: var(--ink); background: var(--accent-soft); }
+.add-card.is-added .pick-toggle { background: var(--surface); color: var(--ink); border-color: var(--ink); }
+.add-card .pick-toggle[aria-pressed="false"] { background: var(--surface); color: var(--ink); border-color: var(--line); }
+.add-info strong { display: block; font-size: 15px; }
+.add-info span { display: block; font-size: 12px; color: var(--muted); }
+.add-info em { display: block; font-style: normal; font-size: 12px; color: #8a5a2b; margin-top: 2px; }
+.btn[disabled] { opacity: .4; cursor: not-allowed; }
+@media (max-width: 700px) {
+  .add-grid { grid-template-columns: 1fr; }
+  .result-side { grid-column: 2; flex-direction: row; align-items: center; justify-content: space-between; }
+}
+.bundle-items { list-style: none; padding: 0; margin: 10px 0 6px; border-top: 1px solid var(--line); }
+.bundle-items li { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+.bundle-items li span:first-child { flex: 1; }
+.bi-price { color: var(--muted); font-variant-numeric: tabular-nums; }
+.bundle-items button { width: 24px; height: 24px; border-radius: 50%; font-size: 11px; color: var(--muted); }
+.bundle-items button:hover { background: var(--surface-2); color: var(--ink); }
+.bundle-add { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; margin: 4px 0 2px; }
+.bundle-add select { flex: 1; min-width: 0; font: inherit; font-size: 13px; font-weight: 400; border: 1px dashed #b9b9b7; border-radius: 8px; padding: 6px 8px; background: var(--surface); color: var(--ink); }
+.in-bundle { font-size: 14px; font-weight: 600; margin: 0 0 4px; }
+
+/* Dose controls */
+.dose { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 10px; }
+.dose-label { font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-2); }
+.dose select, .bi-dose { font: inherit; font-size: 13px; border: 1px solid var(--line); border-radius: 8px; padding: 5px 8px; background: var(--surface); color: var(--ink); max-width: 100%; }
+.dose select:focus, .bi-dose:focus { outline: 2px solid var(--ink); outline-offset: 1px; }
+.dose-range { font-size: 12px; color: var(--muted); }
+.result-item.is-off .dose { opacity: .38; pointer-events: none; }
+.bundle-items li { flex-wrap: wrap; }
+.bi-dose { font-size: 12px; padding: 3px 6px; max-width: 170px; }
+.bundle-items li { display: grid; grid-template-columns: 1fr auto auto; grid-template-areas: "name price x" "dose dose dose"; gap: 4px 10px; align-items: center; }
+.bundle-items li > span:first-child { grid-area: name; font-weight: 600; }
+.bundle-items .bi-price { grid-area: price; }
+.bundle-items button { grid-area: x; }
+.bundle-items .bi-dose { grid-area: dose; max-width: none; width: 100%; }

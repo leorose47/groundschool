@@ -93,13 +93,13 @@
     {
       id: "ashwagandha", lbl: "600 mg ASHWAGANDHA", num: "05", name: "Calm", kind: "Ashwagandha root extract", shape: "bottle", color: "#e2e2e0", labelInk: "#1a1a1a",
       purpose: "A clinically studied adaptogen for staying level when life isn't.",
-      price: 28, servings: 30, form: "1 capsule",
+      price: 28, servings: 30, form: "2 capsules",
       goals: ["stress", "sleep", "strength"],
       key: [["Ashwagandha root extract", "600 mg"], ["Withanolides", "5%"], ["Part used", "Root only"]],
       benefits: ["Supports a healthy response to everyday stress*", "Supports sleep quality*", "Full-spectrum root extract, standardized"],
       facts: [["Ashwagandha root extract (Withania somnifera) standardized to 5% withanolides", "600 mg", "†"]],
       other: "Hypromellose (capsule).",
-      take: "1 capsule daily, morning or evening. Cycle 8 weeks on, 2 weeks off.",
+      take: "2 capsules (600 mg) daily, morning or evening. Cycle 8 weeks on, 2 weeks off.",
       free: ["Vegan", "Gluten free", "Root only"],
       caution: "Not for use with thyroid medication, sedatives, immunosuppressants, or if you have a thyroid or autoimmune condition. Speak with your doctor first.",
     },
@@ -193,13 +193,51 @@
   ];
   let exampleBundles = [];
 
+  /* Daily dose options per product. Every option stays within commonly used, safe intakes.
+     mult = cost relative to the standard serving (more per day = supply runs out faster). */
+  const DOSES = {
+    foundation:  { range: "1–2 capsules", std: 1, levels: [["1 capsule", "25 mcg D3 · 7.5 mg zinc", 0.5], ["2 capsules", "50 mcg D3 · 15 mg zinc", 1]] },
+    omega:       { range: "2–3 softgels", std: 1, levels: [["1 softgel", "500 mg EPA", 0.5], ["2 softgels", "1,000 mg EPA", 1], ["3 softgels", "1,500 mg EPA", 1.5]] },
+    creatine:    { range: "3–5 g", std: 1, levels: [["3 g", "about ⅗ scoop", 0.6], ["5 g", "1 scoop", 1]] },
+    magnesium:   { range: "200–300 mg", std: 1, levels: [["1 capsule", "100 mg", 0.5], ["2 capsules", "200 mg", 1], ["3 capsules", "300 mg", 1.5]] },
+    ashwagandha: { range: "300–600 mg", std: 1, levels: [["1 capsule", "300 mg", 0.5], ["2 capsules", "600 mg", 1]] },
+    protein:     { range: "1–2 scoops", std: 0, levels: [["1 scoop", "25 g protein", 1], ["2 scoops", "50 g protein", 2]] },
+    hydrate:     { range: "1–2 sticks", std: 0, levels: [["1 stick", "1,000 mg sodium", 1], ["2 sticks", "2,000 mg sodium", 2]] },
+    rest:        { range: "2–3 capsules", std: 1, levels: [["2 capsules", "2 g glycine", 0.67], ["3 capsules", "3 g glycine", 1]] },
+    focus:       { range: "100–200 mg caffeine", std: 0, levels: [["1 capsule", "100 mg caffeine", 1], ["2 capsules", "200 mg caffeine", 2]] },
+  };
+  const doseIdx = (id, i) => { const d = DOSES[id]; return Number.isInteger(i) && i >= 0 && i < d.levels.length ? i : d.std; };
+  const doseMult = (id, i) => DOSES[id].levels[doseIdx(id, i)][2];
+  const doseText = (id, i) => { const l = DOSES[id].levels[doseIdx(id, i)]; return `${l[0]} · ${l[1]}`; };
+
+  // Personal starting dose from survey answers (falls back to the standard serving)
+  function recDose(id, a) {
+    if (!a) return DOSES[id].std;
+    const ex = a.extras || [], act = a.activity || [], g = a.goals || [];
+    const training = +((a.training || [])[0] || 0), sleep = (a.sleep || [])[0], stress = (a.stress || [])[0], diet = (a.diet || [])[0];
+    switch (id) {
+      case "omega": return g.includes("heart") || diet === "nofish" ? 2 : 1;
+      case "magnesium": return sleep === "poor" || ex.includes("alcohol") || ex.includes("sweat") || training >= 5 ? 2 : 1;
+      case "ashwagandha": return stress === "high" || stress === "vhigh" ? 1 : 0;
+      case "protein": return ex.includes("lowprotein") || (act.includes("lifting") && training >= 5) ? 1 : 0;
+      case "hydrate": return ex.includes("sweat") && (training >= 5 || act.includes("cardio")) ? 1 : 0;
+      case "rest": return sleep === "poor" ? 1 : 0;
+      default: return DOSES[id].std;
+    }
+  }
+  function doseSelect(id, cur, rec, attr) {
+    return `<select ${attr} aria-label="Daily dose for ${esc(P[id].name)}">${DOSES[id].levels.map((l, i) =>
+      `<option value="${i}" ${i === cur ? "selected" : ""}>${esc(l[0])} · ${esc(l[1])}${i === rec ? " · recommended" : ""}</option>`).join("")}</select>`;
+  }
+
   /* ───────────────────────── Helpers ───────────────────────── */
   const $ = (s, el = document) => el.querySelector(s);
   const $$ = (s, el = document) => [...el.querySelectorAll(s)];
   const money = n => "$" + n.toFixed(2).replace(/\.00$/, "");
   const money2 = n => "$" + n.toFixed(2);
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-  const bundleBase = ids => ids.reduce((t, id) => t + P[id].price, 0);
+  const bundleBase = (ids, doses = {}) => ids.reduce((t, id) => t + P[id].price * doseMult(id, doses[id]), 0);
+  const bundleOff = ids => (ids.length >= 2 ? BUNDLE_OFF : 0); // bundle pricing kicks in at 2+ products
 
   let toastTimer;
   function toast(msg) {
@@ -245,22 +283,31 @@
       return { full: full * l.qty, now: each * l.qty };
     }
     if (l.type === "bundle") {
-      const full = bundleBase(l.items);
-      const each = full * (1 - BUNDLE_OFF) * (l.sub ? 1 - STACK_SUB_OFF : 1);
+      const full = bundleBase(l.items, l.doses || {});
+      const each = full * (1 - bundleOff(l.items)) * (l.sub ? 1 - STACK_SUB_OFF : 1);
       return { full: full * l.qty, now: each * l.qty };
     }
   }
 
-  function addToCart(type, id, { sub = true, qty = 1, silent = false, items } = {}) {
+  function addToCart(type, id, { sub = true, qty = 1, silent = false, items, doses } = {}) {
     if (type === "bundle") cart = cart.filter(l => l.type !== "bundle"); // one personal bundle at a time
     const existing = type !== "bundle" && cart.find(l => l.type === type && l.id === id && l.sub === sub);
     if (existing) existing.qty += qty;
-    else cart.push({ key: type + ":" + id + ":" + Date.now() + Math.random().toString(36).slice(2, 6), type, id, items, qty, sub, freq: 30 });
+    else cart.push({ key: type + ":" + id + ":" + Date.now() + Math.random().toString(36).slice(2, 6), type, id, items, doses: doses || (items ? Object.fromEntries(items.map(i => [i, recDose(i, lastAnswers)])) : undefined), qty, sub, freq: 30 });
     save();
     renderCart();
     const c = $("#cartCount");
     c.classList.remove("bump"); void c.offsetWidth; c.classList.add("bump");
     if (!silent) toast(`${type === "product" ? P[id].name : "Your bundle"} added${sub ? " · subscribe & save" : ""}`);
+  }
+
+  const cartBundle = () => cart.find(l => l.type === "bundle");
+  function addToBundle(id) {
+    const b = cartBundle();
+    if (!b) return addToCart("bundle", "personal", { items: [id] });
+    if (!b.items.includes(id)) { b.items.push(id); (b.doses ||= {})[id] = recDose(id, lastAnswers); }
+    save(); renderCart();
+    toast(`${P[id].name} added to your bundle`);
   }
 
   function renderCart() {
@@ -288,7 +335,11 @@
       const isP = l.type === "product";
       const item = isP ? P[l.id] : { name: "Your Tropos bundle", items: l.items };
       const pr = linePricing(l);
-      const sub = isP ? `${esc(item.kind)} · ${item.servings}-day supply` : item.items.map(i => P[i].name).join(" + ");
+      const others = isP ? [] : PRODUCTS.filter(p => !l.items.includes(p.id));
+      const sub = isP ? `${esc(item.kind)} · ${item.servings}-day supply`
+        : `${l.items.length} product${l.items.length > 1 ? "s" : ""}${l.items.length < 2 ? " · add one more for 15% off" : " · 15% bundle pricing"}`;
+      const bundleEdit = isP ? "" : `<ul class="bundle-items">${l.items.map(i => `<li><span>${esc(P[i].name)}</span>${doseSelect(i, doseIdx(i, (l.doses || {})[i]), recDose(i, lastAnswers), `data-act="bundle-dose" data-id="${i}" class="bi-dose"`)}<span class="bi-price">${money2(P[i].price * doseMult(i, (l.doses || {})[i]))}</span><button data-act="bundle-remove" data-id="${i}" aria-label="Remove ${esc(P[i].name)} from bundle">✕</button></li>`).join("")}</ul>
+          ${others.length ? `<label class="bundle-add">+ <select data-act="bundle-add" aria-label="Add a product to your bundle"><option value="">Add a product to your bundle</option>${others.map(p => `<option value="${p.id}">${esc(p.name)} · ${esc(p.kind)} · ${money(p.price)}</option>`).join("")}</select></label>` : ""}`;
       const media = isP ? art(item) : art(P[item.items[0]]);
       const offLabel = isP ? "Save 20%" : "Extra 10%";
       return `<div class="line" data-key="${l.key}">
@@ -298,6 +349,7 @@
             <div><h4>${esc(item.name)}</h4><div class="line-sub">${sub}</div></div>
             <div class="line-price">${pr.full > pr.now ? `<s>${money2(pr.full)}</s>` : ""}${money2(pr.now)}</div>
           </div>
+          ${bundleEdit}
           <div class="purchase-toggle" role="group" aria-label="Purchase type">
             <button class="${l.sub ? "on" : ""}" data-act="sub" data-val="1">Subscribe · ${offLabel}</button>
             <button class="${l.sub ? "" : "on"}" data-act="sub" data-val="0">One-time</button>
@@ -322,7 +374,7 @@
 
   $("#cartItems").addEventListener("click", e => {
     const btn = e.target.closest("[data-act]");
-    if (!btn || btn.tagName === "SELECT") return;
+    if (!btn || btn.tagName === "SELECT" || btn.closest("select")) return;
     const line = cart.find(l => l.key === btn.closest(".line").dataset.key);
     if (!line) return;
     const act = btn.dataset.act;
@@ -330,9 +382,23 @@
     if (act === "dec") line.qty = Math.max(1, line.qty - 1);
     if (act === "remove") cart = cart.filter(l => l !== line);
     if (act === "sub") line.sub = btn.dataset.val === "1";
+    if (act === "bundle-remove") {
+      line.items = line.items.filter(i => i !== btn.dataset.id);
+      if (!line.items.length) cart = cart.filter(l => l !== line);
+    }
     save(); renderCart();
   });
   $("#cartItems").addEventListener("change", e => {
+    if (e.target.dataset.act === "bundle-add" && e.target.value) {
+      const line = cart.find(l => l.key === e.target.closest(".line").dataset.key);
+      if (line && !line.items.includes(e.target.value)) { line.items.push(e.target.value); (line.doses ||= {})[e.target.value] = recDose(e.target.value, lastAnswers); save(); renderCart(); }
+      return;
+    }
+    if (e.target.dataset.act === "bundle-dose") {
+      const line = cart.find(l => l.key === e.target.closest(".line").dataset.key);
+      if (line) { (line.doses ||= {})[e.target.dataset.id] = +e.target.value; save(); renderCart(); }
+      return;
+    }
     if (e.target.dataset.act !== "freq") return;
     const line = cart.find(l => l.key === e.target.closest(".line").dataset.key);
     if (line) { line.freq = +e.target.value; save(); }
@@ -420,11 +486,13 @@
   }
 
   /* ───────────────────────── Product modal ───────────────────────── */
-  let modalSub = true;
+  let modalMode = "sub";
   function openModal(id) {
     const p = P[id];
     if (!p) return;
-    modalSub = true;
+    const bundle = cartBundle();
+    const inBundle = bundle && bundle.items.includes(id);
+    modalMode = bundle && !inBundle ? "bundle" : "sub";
     const panel = $("#modalPanel");
     const pairs = exampleBundles.filter(b => b.includes(id)).flat().filter((x, i, a) => x !== id && a.indexOf(x) === i).slice(0, 3);
     panel.innerHTML = `
@@ -437,13 +505,15 @@
           <p class="pd-purpose">${esc(p.purpose)}</p>
           <ul class="pd-benefits">${p.benefits.map(b => `<li>${esc(b)}</li>`).join("")}</ul>
           <div class="buy-opts" role="radiogroup" aria-label="Purchase option">
-            <button class="buy-opt on" data-buy="1" role="radio" aria-checked="true"><span><strong>Subscribe &amp; save 20%</strong><small>Ships every 30 days · free shipping · cancel any time</small></span><span class="p"><s>${money(p.price)}</s>${money2(p.price * (1 - SUB_OFF))}</span></button>
-            <button class="buy-opt" data-buy="0" role="radio" aria-checked="false"><span><strong>One-time purchase</strong><small>${p.servings}-day supply</small></span><span class="p">${money2(p.price)}</span></button>
+            ${bundle && !inBundle ? `<button class="buy-opt on" data-buy="bundle" role="radio" aria-checked="true"><span><strong>Add to my bundle</strong><small>Joins your personal bundle at 15% off, same delivery</small></span><span class="p"><s>${money(p.price)}</s>${money2(p.price * (1 - BUNDLE_OFF))}</span></button>` : ""}
+            ${inBundle ? `<p class="in-bundle">✓ Already in your bundle</p>` : ""}
+            <button class="buy-opt ${modalMode === "sub" ? "on" : ""}" data-buy="sub" role="radio" aria-checked="${modalMode === "sub"}"><span><strong>Subscribe &amp; save 20%</strong><small>Ships every 30 days · free shipping · cancel any time</small></span><span class="p"><s>${money(p.price)}</s>${money2(p.price * (1 - SUB_OFF))}</span></button>
+            <button class="buy-opt" data-buy="once" role="radio" aria-checked="false"><span><strong>One-time purchase</strong><small>${p.servings}-day supply</small></span><span class="p">${money2(p.price)}</span></button>
           </div>
           <button class="btn btn-primary btn-block" id="modalAdd">Add to cart</button>
           <div class="pd-tabs">
             <details open><summary>Supplement facts</summary><div class="tab-body">${factsPanel(p)}</div></details>
-            <details><summary>How to take</summary><div class="tab-body"><p>${esc(p.take)}</p>${p.caution ? `<div class="caution"><strong>Caution:</strong> ${esc(p.caution)}</div>` : ""}</div></details>
+            <details><summary>How to take</summary><div class="tab-body"><p>${esc(p.take)}</p><p><strong>Typical daily range:</strong> ${esc(DOSES[p.id].range)}. You can set your dose per product in your bundle.</p>${p.caution ? `<div class="caution"><strong>Caution:</strong> ${esc(p.caution)}</div>` : ""}</div></details>
             <details><summary>Testing &amp; sourcing</summary><div class="tab-body"><p>Made in an NSF-certified, cGMP facility. Every batch is tested by an independent ISO 17025-accredited lab for identity, potency, microbes and heavy metals (lead, mercury, cadmium, arsenic).</p><p>Find the lot number on the bottom of your ${p.shape === "tub" ? "tub" : "bottle"} to see that batch's results.</p></div></details>
             ${pairs.length ? `<details><summary>Pairs well with</summary><div class="tab-body"><p>${pairs.map(x => `<a href="#" data-open="${x}" style="text-decoration:underline">${P[x].name}</a>`).join(", ")}</p></div></details>` : ""}
           </div>
@@ -454,7 +524,11 @@
     modal.setAttribute("aria-hidden", "false");
     document.body.classList.add("locked");
     panel.scrollTop = 0;
-    $("#modalAdd").onclick = () => { addToCart("product", id, { sub: modalSub }); closeModal(); };
+    $("#modalAdd").onclick = () => {
+      if (modalMode === "bundle") addToBundle(id);
+      else addToCart("product", id, { sub: modalMode === "sub" });
+      closeModal();
+    };
     $(".modal-close", panel).focus();
   }
   function closeModal() {
@@ -467,7 +541,7 @@
     if (e.target === modal || e.target.closest("[data-close-modal]")) { closeModal(); return; }
     const opt = e.target.closest("[data-buy]");
     if (opt) {
-      modalSub = opt.dataset.buy === "1";
+      modalMode = opt.dataset.buy;
       $$("[data-buy]", modal).forEach(b => { const on = b === opt; b.classList.toggle("on", on); b.setAttribute("aria-checked", on); });
     }
     if (e.target.closest("a[data-open]")) e.preventDefault();
@@ -707,7 +781,9 @@
     diet: { omni: "Eats most things", nofish: "Rarely eats fish", veg: "Vegetarian", vegan: "Vegan" },
   };
 
-  let lastPicks = [];
+  let lastPicks = [];       // current selection on the result screen
+  let lastDoses = {};
+  let lastAnswers = null;
   function showResult() {
     const res = $("#quizResult");
     $("#quizBar").style.width = "100%";
@@ -726,10 +802,9 @@
   function renderResult() {
     const answers = Object.fromEntries(QUESTIONS.map(q => [q.name, values(q.name)]));
     const picks = recommend(answers);
+    lastAnswers = answers;
     lastPicks = picks.map(p => p.id);
-    const full = bundleBase(lastPicks);
-    const once = full * (1 - BUNDLE_OFF);
-    const subTotal = once * (1 - STACK_SUB_OFF);
+    lastDoses = Object.fromEntries(PRODUCTS.map(p => [p.id, recDose(p.id, answers)]));
     const goalNames = answers.goals.map(g => GOALS[g].toLowerCase());
     const goalText = goalNames.length > 1 ? goalNames.slice(0, -1).join(", ") + " and " + goalNames.slice(-1) : goalNames[0];
 
@@ -754,7 +829,7 @@
           <p class="eyebrow">${n ? esc(n) + "'s" : "Your"} personal bundle</p>
           <h3>${n ? esc(n) + ", here are" : "Here are"} ${picks.length} products for ${esc(goalText)}.</h3>
           <p class="profile">${profile.map(t => `<span>${esc(t)}</span>`).join("")}</p>
-          <p>Ranked by how closely each matches your answers. Bought together they're ${Math.round(BUNDLE_OFF * 100)}% off, plus another ${Math.round(STACK_SUB_OFF * 100)}% when you subscribe.</p>
+          <p>Ranked by how closely each matches your answers, with a starting dose set for you. Bought together they're ${Math.round(BUNDLE_OFF * 100)}% off, plus another ${Math.round(STACK_SUB_OFF * 100)}% when you subscribe.</p>
         </div>
         <button class="q-back" data-restart>↺ Retake survey</button>
       </div>
@@ -762,28 +837,85 @@
         ${picks.map(x => {
           const p = P[x.id];
           const r3 = x.why.slice(0, 3); const why = r3.length > 1 ? r3.slice(0, -1).join(", ") + ", and " + r3[r3.length - 1] : r3[0];
-          return `<div class="result-item">
+          return `<div class="result-item" data-item="${p.id}">
             <div class="mini">${art(p)}</div>
             <div>
               <span class="match">${x.match}% match</span>
               <h4>${esc(p.name)}<span>${esc(p.kind)}</span></h4>
               <p class="result-why">Because ${why}.</p>
+              <div class="dose"><span class="dose-label">Daily dose</span>${doseSelect(p.id, lastDoses[p.id], recDose(p.id, answers), `data-dose="${p.id}"`)}
+                <span class="dose-range">Typical range ${esc(DOSES[p.id].range)}</span></div>
               <button class="q-back" style="padding:4px 0 0;font-size:13px;text-decoration:underline" data-open="${p.id}">View label</button>
             </div>
-            <div class="result-price">${money(p.price)}</div>
+            <div class="result-side"><div class="result-price" data-price="${p.id}">${money2(p.price * doseMult(p.id, lastDoses[p.id]))}</div>
+              <button class="pick-toggle" data-toggle-item="${p.id}" aria-pressed="true">Remove</button></div>
           </div>`;
         }).join("")}
       </div>
-      <div class="result-foot">
-        <div class="result-total"><strong>${money2(subTotal)}</strong>per month with subscription <s style="margin-left:6px">${money2(full)}</s><br><span class="muted">or ${money2(once)} one-time · you save ${money2(full - subTotal)} a month</span></div>
-        <div class="result-actions">
-          <button class="btn btn-ghost" data-add-picks="0">Buy once</button>
-          <button class="btn btn-primary" data-add-picks="1">Subscribe to my bundle →</button>
+      <div class="add-more">
+        <h4>Customize your bundle</h4>
+        <p>Add anything else you'd like. Everything in your bundle gets the same discount. Doses start at what we'd recommend for you, and you can change them in your cart.</p>
+        <div class="add-grid">
+          ${PRODUCTS.filter(p => !lastPicks.includes(p.id)).map(p => {
+            const warn = fitWarning(p.id, answers);
+            return `<div class="add-card" data-item="${p.id}">
+              <div class="mini">${art(p)}</div>
+              <div class="add-info"><strong>${esc(p.name)}</strong><span>${esc(p.kind)} · ${esc(doseText(p.id, lastDoses[p.id]))}</span>${warn ? `<em>${esc(warn)}</em>` : ""}</div>
+              <div class="result-side"><div class="result-price">${money2(p.price * doseMult(p.id, lastDoses[p.id]))}</div>
+                <button class="pick-toggle" data-toggle-item="${p.id}" aria-pressed="false">+ Add</button></div>
+            </div>`;
+          }).join("")}
         </div>
       </div>
+      <div class="result-foot" id="resultFoot"></div>
       ${notes.length ? `<div class="result-note">${notes.map(esc).join("<br>")}</div>` : ""}
       <p class="result-note" style="background:none;padding:14px 0 0">These recommendations are general guidance, not medical advice.</p>`;
+    updateResultFoot();
   }
+
+  // Products the survey excluded for a reason: warn rather than hide
+  function fitWarning(id, a) {
+    const diet = a.diet[0], ex = a.extras || [];
+    if (id === "omega" && (diet === "veg" || diet === "vegan")) return "Contains fish oil";
+    if (id === "protein" && diet === "vegan") return "Contains dairy (whey)";
+    if (id === "focus" && ex.includes("caffeine")) return "Contains 100 mg caffeine";
+    if (id === "ashwagandha" && ex.includes("meds")) return "Check with your doctor first";
+    return "";
+  }
+
+  function updateResultFoot() {
+    const foot = $("#resultFoot");
+    if (!foot) return;
+    $$("#quizResult [data-item]").forEach(el => {
+      const on = lastPicks.includes(el.dataset.item);
+      el.classList.toggle("is-off", !on);
+      const b = $("[data-toggle-item]", el);
+      b.setAttribute("aria-pressed", on); b.textContent = on ? (el.classList.contains("add-card") ? "✓ Added" : "Remove") : (el.classList.contains("add-card") ? "+ Add" : "Add back");
+      el.classList.toggle("is-added", on && el.classList.contains("add-card"));
+    });
+    const n = lastPicks.length;
+    if (!n) {
+      foot.innerHTML = `<div class="result-total"><strong>Empty bundle</strong><br><span class="muted">Add at least one product to continue.</span></div>
+        <div class="result-actions"><button class="btn btn-primary" disabled>Subscribe to my bundle →</button></div>`;
+      return;
+    }
+    const full = bundleBase(lastPicks, lastDoses), off = bundleOff(lastPicks);
+    const once = full * (1 - off), subTotal = once * (1 - STACK_SUB_OFF);
+    foot.innerHTML = `<div class="result-total"><strong>${money2(subTotal)}</strong>per month with subscription <s style="margin-left:6px">${money2(full)}</s>
+        <br><span class="muted">${n} product${n > 1 ? "s" : ""} · or ${money2(once)} one-time${off ? ` · you save ${money2(full - subTotal)} a month` : " · add one more product for 15% bundle pricing"}</span></div>
+      <div class="result-actions">
+        <button class="btn btn-ghost" data-add-picks="0">Buy once</button>
+        <button class="btn btn-primary" data-add-picks="1">Subscribe to my bundle →</button>
+      </div>`;
+  }
+
+  $("#quizResult").addEventListener("change", e => {
+    const id = e.target.dataset.dose;
+    if (!id) return;
+    lastDoses[id] = +e.target.value;
+    const pr = $(`[data-price="${id}"]`); if (pr) pr.textContent = money2(P[id].price * doseMult(id, lastDoses[id]));
+    updateResultFoot();
+  });
 
   $("#quizResult").addEventListener("click", e => {
     if (e.target.closest("[data-restart]")) {
@@ -792,10 +924,17 @@
       updateBar();
       return;
     }
+    const t = e.target.closest("[data-toggle-item]");
+    if (t) {
+      const id = t.dataset.toggleItem;
+      lastPicks = lastPicks.includes(id) ? lastPicks.filter(x => x !== id) : [...lastPicks, id];
+      updateResultFoot();
+      return;
+    }
     const b = e.target.closest("[data-add-picks]");
-    if (b) {
+    if (b && !b.disabled && lastPicks.length) {
       const sub = b.dataset.addPicks === "1";
-      addToCart("bundle", "personal", { sub, items: [...lastPicks], silent: true });
+      addToCart("bundle", "personal", { sub, items: [...lastPicks], doses: Object.fromEntries(lastPicks.map(i => [i, lastDoses[i]])), silent: true });
       toast(`Your ${lastPicks.length}-product bundle is in your cart`);
       openCart();
     }
