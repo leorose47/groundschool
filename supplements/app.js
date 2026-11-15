@@ -1,4 +1,4 @@
-/* Seneca: storefront logic (catalog, quiz, cart, modal) */
+/* Tropos: storefront logic (catalog, quiz, cart, modal) */
 (() => {
   "use strict";
 
@@ -205,30 +205,108 @@
     toastTimer = setTimeout(() => t.classList.remove("show"), 2400);
   }
 
-  /* Product artwork: drawn as SVG so it's crisp everywhere */
+  /* Product artwork: SVG with cylinder shading so bottles read as real objects */
+  let artSeq = 0;
   function art(p) {
-    const name = p.name.toUpperCase();
+    const u = "a" + (++artSeq);
+    const ink = p.labelInk;
+    const brand = "TROPOS";
+    const defs = `
+      <linearGradient id="${u}cyl" x1="0" x2="1">
+        <stop offset="0" stop-color="#000" stop-opacity=".38"/>
+        <stop offset=".14" stop-color="#000" stop-opacity=".08"/>
+        <stop offset=".27" stop-color="#fff" stop-opacity=".16"/>
+        <stop offset=".36" stop-color="#fff" stop-opacity=".04"/>
+        <stop offset=".62" stop-color="#000" stop-opacity=".02"/>
+        <stop offset=".86" stop-color="#000" stop-opacity=".18"/>
+        <stop offset="1" stop-color="#000" stop-opacity=".42"/>
+      </linearGradient>
+      <linearGradient id="${u}lab" x1="0" x2="1">
+        <stop offset="0" stop-color="#000" stop-opacity=".22"/>
+        <stop offset=".16" stop-color="#000" stop-opacity=".03"/>
+        <stop offset=".28" stop-color="#fff" stop-opacity=".35"/>
+        <stop offset=".4" stop-color="#fff" stop-opacity="0"/>
+        <stop offset=".85" stop-color="#000" stop-opacity=".08"/>
+        <stop offset="1" stop-color="#000" stop-opacity=".26"/>
+      </linearGradient>
+      <linearGradient id="${u}cap" x1="0" x2="1">
+        <stop offset="0" stop-color="#0b0e0c"/>
+        <stop offset=".22" stop-color="#2b312d"/>
+        <stop offset=".32" stop-color="#3d4440"/>
+        <stop offset=".5" stop-color="#1c211e"/>
+        <stop offset="1" stop-color="#070908"/>
+      </linearGradient>
+      <linearGradient id="${u}vert" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#fff" stop-opacity=".10"/>
+        <stop offset=".25" stop-color="#fff" stop-opacity="0"/>
+        <stop offset=".85" stop-color="#000" stop-opacity="0"/>
+        <stop offset="1" stop-color="#000" stop-opacity=".22"/>
+      </linearGradient>
+      <linearGradient id="${u}spec" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#fff" stop-opacity="0"/>
+        <stop offset=".2" stop-color="#fff" stop-opacity=".28"/>
+        <stop offset=".8" stop-color="#fff" stop-opacity=".18"/>
+        <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+      </linearGradient>
+      <radialGradient id="${u}shadow" cx=".5" cy=".5" r=".5">
+        <stop offset="0" stop-color="#1c221e" stop-opacity=".35"/>
+        <stop offset="1" stop-color="#1c221e" stop-opacity="0"/>
+      </radialGradient>`;
+    const ridges = (x0, x1, y, h, step) => {
+      let s = "";
+      for (let x = x0 + step; x < x1; x += step) s += `<line x1="${x}" y1="${y}" x2="${x}" y2="${y + h}"/>`;
+      return `<g stroke="#000" stroke-opacity=".35" stroke-width=".6">${s}</g>`;
+    };
+    const fit = (len, big, small, limit) => (len > limit ? small : big);
+
     if (p.shape === "tub") {
-      return `<svg viewBox="0 0 140 150" role="img" aria-label="${esc(p.name)} container">
-        <rect x="14" y="8" width="112" height="22" rx="6" fill="#1f2521"/>
-        <rect x="14" y="26" width="112" height="4" fill="#000" opacity=".15"/>
-        <rect x="18" y="30" width="104" height="114" rx="10" fill="${p.color}"/>
-        <rect x="18" y="56" width="104" height="64" fill="#f7f4ec"/>
-        <text x="70" y="72" text-anchor="middle" font-family="Inter,Arial" font-size="7" letter-spacing="1.5" fill="${p.labelInk}" opacity=".7">${p.num} · SENECA</text>
-        <text x="70" y="93" text-anchor="middle" font-family="Fraunces,Georgia,serif" font-size="17" fill="${p.labelInk}">${esc(p.name)}</text>
-        <text x="70" y="110" text-anchor="middle" font-family="Inter,Arial" font-size="${p.lbl.length > 15 ? 5.6 : 6.5}" letter-spacing=".6" fill="${p.labelInk}" opacity=".75">${esc(p.lbl)}</text>
-        <rect x="18" y="30" width="10" height="114" rx="5" fill="#fff" opacity=".12"/>
+      return `<svg viewBox="0 0 140 160" role="img" aria-label="${esc(p.name)} container">
+        <defs>${defs}</defs>
+        <ellipse cx="70" cy="151" rx="62" ry="6" fill="url(#${u}shadow)"/>
+        <rect x="16" y="36" width="108" height="112" rx="7" fill="${p.color}"/>
+        <rect x="16" y="36" width="108" height="112" rx="7" fill="url(#${u}vert)"/>
+        <rect x="16" y="62" width="108" height="66" fill="#f6f3eb"/>
+        <rect x="16" y="62" width="108" height=".6" fill="#000" opacity=".12"/>
+        <rect x="16" y="127.4" width="108" height=".6" fill="#000" opacity=".12"/>
+        <text x="70" y="75" text-anchor="middle" font-family="Inter,Arial" font-size="5.2" font-weight="600" letter-spacing="2.2" fill="${ink}">${brand}</text>
+        <text x="70" y="95" text-anchor="middle" font-family="Fraunces,Georgia,serif" font-size="16" fill="${ink}">${esc(p.name)}</text>
+        <line x1="58" y1="101" x2="82" y2="101" stroke="${ink}" stroke-opacity=".35" stroke-width=".5"/>
+        <text x="70" y="110" text-anchor="middle" font-family="Inter,Arial" font-size="${fit(p.lbl.length, 5.4, 4.6, 15)}" letter-spacing=".7" fill="${ink}" opacity=".85">${esc(p.lbl)}</text>
+        <text x="70" y="121" text-anchor="middle" font-family="Inter,Arial" font-size="3.6" letter-spacing=".9" fill="${ink}" opacity=".55">${p.servings} SERVINGS · SUPPLEMENT</text>
+        <rect x="16" y="36" width="108" height="112" rx="7" fill="url(#${u}cyl)"/>
+        <rect x="31" y="42" width="5" height="100" rx="2.5" fill="url(#${u}spec)"/>
+        <rect x="12" y="12" width="116" height="26" rx="3.5" fill="url(#${u}cap)"/>
+        ${ridges(12, 128, 15, 20, 3.2)}
+        <rect x="12" y="12" width="116" height="2.2" rx="1.1" fill="#fff" opacity=".12"/>
+        <rect x="12" y="35.5" width="116" height="2.5" fill="#000" opacity=".35"/>
       </svg>`;
     }
-    return `<svg viewBox="0 0 100 170" role="img" aria-label="${esc(p.name)} bottle">
-      <rect x="28" y="6" width="44" height="24" rx="5" fill="#1f2521"/>
-      <rect x="32" y="28" width="36" height="8" fill="#1f2521" opacity=".85"/>
-      <rect x="12" y="34" width="76" height="130" rx="16" fill="${p.color}"/>
-      <rect x="12" y="68" width="76" height="66" fill="#f7f4ec"/>
-      <text x="50" y="83" text-anchor="middle" font-family="Inter,Arial" font-size="6" letter-spacing="1.4" fill="${p.labelInk}" opacity=".7">${p.num} · SENECA</text>
-      <text x="50" y="103" text-anchor="middle" font-family="Fraunces,Georgia,serif" font-size="${name.length > 9 ? 12 : 14.5}" fill="${p.labelInk}">${esc(p.name)}</text>
-      <text x="50" y="121" text-anchor="middle" font-family="Inter,Arial" font-size="${p.lbl.length > 15 ? 4.7 : 5.6}" letter-spacing=".4" fill="${p.labelInk}" opacity=".75">${esc(p.lbl)}</text>
-      <rect x="12" y="34" width="9" height="130" rx="4.5" fill="#fff" opacity=".12"/>
+
+    const body = "M14 54 C14 42 22 38 34 37 L66 37 C78 38 86 42 86 54 L86 160 Q86 168 78 168 L22 168 Q14 168 14 160 Z";
+    return `<svg viewBox="0 0 100 178" role="img" aria-label="${esc(p.name)} bottle">
+      <defs>${defs}<clipPath id="${u}clip"><path d="${body}"/></clipPath></defs>
+      <ellipse cx="50" cy="170" rx="42" ry="5" fill="url(#${u}shadow)"/>
+      <rect x="34" y="29" width="32" height="9" fill="${p.color}"/>
+      <rect x="34" y="29" width="32" height="9" fill="url(#${u}cyl)"/>
+      <rect x="34" y="29" width="32" height="2" fill="#000" opacity=".3"/>
+      <g clip-path="url(#${u}clip)">
+        <path d="${body}" fill="${p.color}"/>
+        <path d="${body}" fill="url(#${u}vert)"/>
+        <rect x="14" y="76" width="72" height="66" fill="#f6f3eb"/>
+        <rect x="14" y="76" width="72" height=".6" fill="#000" opacity=".12"/>
+        <rect x="14" y="141.4" width="72" height=".6" fill="#000" opacity=".12"/>
+        <text x="50" y="88" text-anchor="middle" font-family="Inter,Arial" font-size="4.4" font-weight="600" letter-spacing="2" fill="${ink}">${brand}</text>
+        <text x="50" y="106" text-anchor="middle" font-family="Fraunces,Georgia,serif" font-size="${fit(p.name.length, 13.5, 11.5, 8)}" fill="${ink}">${esc(p.name)}</text>
+        <line x1="40" y1="112" x2="60" y2="112" stroke="${ink}" stroke-opacity=".35" stroke-width=".45"/>
+        <text x="50" y="121" text-anchor="middle" font-family="Inter,Arial" font-size="${fit(p.lbl.length, 4.7, 4, 15)}" letter-spacing=".5" fill="${ink}" opacity=".85">${esc(p.lbl)}</text>
+        <text x="50" y="133" text-anchor="middle" font-family="Inter,Arial" font-size="3" letter-spacing=".7" fill="${ink}" opacity=".55">${p.servings} SERVINGS · SUPPLEMENT</text>
+        <path d="${body}" fill="url(#${u}cyl)"/>
+        <rect x="23" y="44" width="4" height="118" rx="2" fill="url(#${u}spec)"/>
+        <ellipse cx="50" cy="41" rx="30" ry="3" fill="#fff" opacity=".08"/>
+      </g>
+      <rect x="30" y="6" width="40" height="25" rx="3" fill="url(#${u}cap)"/>
+      ${ridges(30, 70, 9, 19, 2.6)}
+      <rect x="30" y="6" width="40" height="2" rx="1" fill="#fff" opacity=".12"/>
     </svg>`;
   }
 
@@ -252,8 +330,8 @@
   /* ───────────────────────── Cart state ───────────────────────── */
   // line: { key, type: 'product'|'stack', id, qty, sub, freq }
   let cart = [];
-  try { cart = JSON.parse(localStorage.getItem("seneca-cart") || "[]").filter(l => (l.type === "product" ? P[l.id] : S[l.id])); } catch { cart = []; }
-  const save = () => { try { localStorage.setItem("seneca-cart", JSON.stringify(cart)); } catch {} };
+  try { cart = JSON.parse(localStorage.getItem("tropos-cart") || "[]").filter(l => (l.type === "product" ? P[l.id] : S[l.id])); } catch { cart = []; }
+  const save = () => { try { localStorage.setItem("tropos-cart", JSON.stringify(cart)); } catch {} };
 
   function linePricing(l) {
     if (l.type === "product") {

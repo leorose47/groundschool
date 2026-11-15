@@ -1,4 +1,4 @@
-# Seneca: men's supplement storefront
+# Tropos: men's supplement storefront
 
 Static site with no build step. Open `index.html` in a browser, or serve the folder:
 
