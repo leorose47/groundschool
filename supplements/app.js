@@ -220,9 +220,15 @@
       default: return DOSES[id].std;
     }
   }
-  function doseSelect(id, cur, rec, attr) {
-    return `<select ${attr} aria-label="Daily dose for ${esc(P[id].name)}">${DOSES[id].levels.map((l, i) =>
-      `<option value="${i}" ${i === cur ? "selected" : ""}>${esc(l[0])} · ${esc(l[1])}${i === rec ? " · recommended" : ""}</option>`).join("")}</select>`;
+  // Segmented dose picker: short labels, a dot on the recommended dose, the amount underneath
+  const shortDose = t => t.replace(/ capsules?$/, m => (m.endsWith("s") ? " caps" : " cap")).replace(/ softgels?$/, m => (m.endsWith("s") ? " gels" : " gel"));
+  function doseSeg(id, cur, rec, attrs) {
+    const lv = DOSES[id].levels;
+    return `<div class="dose-pick">
+      <div class="seg" role="radiogroup" aria-label="Daily dose for ${esc(P[id].name)}">${lv.map((l, i) =>
+        `<button type="button" class="seg-btn ${i === cur ? "on" : ""}" role="radio" aria-checked="${i === cur}" ${attrs} data-val="${i}" title="${esc(l[0])}: ${esc(l[1])}${i === rec ? " (recommended)" : ""}">${esc(shortDose(l[0]))}${i === rec ? `<span class="rec-dot" aria-hidden="true"></span>` : ""}</button>`).join("")}</div>
+      <span class="dose-detail">${esc(lv[cur][1])}${cur === rec ? " · recommended for you" : ` · we'd suggest ${esc(shortDose(lv[rec][0]))}`}</span>
+    </div>`;
   }
 
   /* ───────────────────────── Helpers ───────────────────────── */
@@ -370,7 +376,7 @@
       const others = isP ? [] : PRODUCTS.filter(p => !l.items.includes(p.id));
       const sub = isP ? `${esc(item.kind)} · ${item.servings}-day supply`
         : `${l.items.length} product${l.items.length > 1 ? "s" : ""}`;
-      const bundleEdit = isP ? "" : `<ul class="bundle-items">${l.items.map(i => `<li><span>${esc(P[i].name)}</span>${doseSelect(i, doseIdx(i, (l.doses || {})[i]), recDose(i, lastAnswers), `data-act="bundle-dose" data-id="${i}" class="bi-dose"`)}<span class="bi-price">${money2(P[i].price * doseMult(i, (l.doses || {})[i]))}</span><button data-act="bundle-remove" data-id="${i}" aria-label="Remove ${esc(P[i].name)} from bundle">✕</button></li>`).join("")}</ul>
+      const bundleEdit = isP ? "" : `<ul class="bundle-items">${l.items.map(i => `<li><span>${esc(P[i].name)}</span>${doseSeg(i, doseIdx(i, (l.doses || {})[i]), recDose(i, lastAnswers), `data-act="bundle-dose" data-id="${i}"`)}<span class="bi-price">${money2(P[i].price * doseMult(i, (l.doses || {})[i]))}</span><button data-act="bundle-remove" data-id="${i}" aria-label="Remove ${esc(P[i].name)} from bundle">✕</button></li>`).join("")}</ul>
           ${others.length ? `<label class="bundle-add">+ <select data-act="bundle-add" aria-label="Add a product to your bundle"><option value="">Add a product to your bundle</option>${others.map(p => `<option value="${p.id}">${esc(p.name)} · ${esc(p.kind)} · ${money(p.price)}</option>`).join("")}</select></label>` : ""}`;
       const media = isP ? art(item) : art(P[item.items[0]]);
       const lineIds = isP ? [l.id] : l.items, lineDoses = isP ? {} : (l.doses || {});
@@ -440,6 +446,7 @@
     if (act === "remove") cart = cart.filter(l => l !== line);
     if (act === "sub") line.sub = btn.dataset.val === "1";
     if (act === "plan-up") { line.plan = btn.dataset.val; line.sub = true; }
+    if (act === "bundle-dose") (line.doses ||= {})[btn.dataset.id] = +btn.dataset.val;
     if (act === "bundle-remove") {
       line.items = line.items.filter(i => i !== btn.dataset.id);
       if (!line.items.length) cart = cart.filter(l => l !== line);
@@ -928,7 +935,7 @@
               <span class="match">${x.match}% match</span>
               <h4>${esc(p.name)}<span>${esc(p.kind)}</span></h4>
               <p class="result-why">Because ${why}.</p>
-              <div class="dose"><span class="dose-label">Daily dose</span>${doseSelect(p.id, lastDoses[p.id], recDose(p.id, answers), `data-dose="${p.id}"`)}
+              <div class="dose" data-dose-wrap="${p.id}"><span class="dose-label">Daily dose</span>${doseSeg(p.id, lastDoses[p.id], recDose(p.id, answers), `data-dose="${p.id}"`)}
                 <span class="dose-range">Typical range ${esc(DOSES[p.id].range)}</span></div>
               <button class="q-back" style="padding:4px 0 0;font-size:13px;text-decoration:underline" data-open="${p.id}">View label</button>
             </div>
@@ -1032,10 +1039,13 @@
       </div>`;
   }
 
-  $("#quizResult").addEventListener("change", e => {
-    const id = e.target.dataset.dose;
-    if (!id) return;
-    lastDoses[id] = +e.target.value;
+  $("#quizResult").addEventListener("click", e => {
+    const b = e.target.closest("[data-dose]");
+    if (!b) return;
+    const id = b.dataset.dose;
+    lastDoses[id] = +b.dataset.val;
+    const wrap = $(`[data-dose-wrap="${id}"] .dose-pick`);
+    if (wrap) wrap.outerHTML = doseSeg(id, lastDoses[id], recDose(id, lastAnswers), `data-dose="${id}"`);
     const pr = $(`[data-price="${id}"]`); if (pr) pr.textContent = money2(P[id].price * doseMult(id, lastDoses[id]));
     updateResultFoot();
   });

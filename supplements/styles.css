@@ -568,8 +568,8 @@ a.how-step p { color: #bdbdbb; }
 .bundle-items li { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
 .bundle-items li span:first-child { flex: 1; }
 .bi-price { color: var(--muted); font-variant-numeric: tabular-nums; }
-.bundle-items button { width: 24px; height: 24px; border-radius: 50%; font-size: 11px; color: var(--muted); }
-.bundle-items button:hover { background: var(--surface-2); color: var(--ink); }
+.bundle-items li > button { width: 24px; height: 24px; border-radius: 50%; font-size: 11px; color: var(--muted); }
+.bundle-items li > button:hover { background: var(--surface-2); color: var(--ink); }
 .bundle-add { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; margin: 4px 0 2px; }
 .bundle-add select { flex: 1; min-width: 0; font: inherit; font-size: 13px; font-weight: 400; border: 1px dashed #b9b9b7; border-radius: 8px; padding: 6px 8px; background: var(--surface); color: var(--ink); }
 .in-bundle { font-size: 14px; font-weight: 600; margin: 0 0 4px; }
@@ -586,7 +586,7 @@ a.how-step p { color: #bdbdbb; }
 .bundle-items li { display: grid; grid-template-columns: 1fr auto auto; grid-template-areas: "name price x" "dose dose dose"; gap: 4px 10px; align-items: center; }
 .bundle-items li > span:first-child { grid-area: name; font-weight: 600; }
 .bundle-items .bi-price { grid-area: price; }
-.bundle-items button { grid-area: x; }
+.bundle-items li > button { grid-area: x; }
 .bundle-items .bi-dose { grid-area: dose; max-width: none; width: 100%; }
 
 /* Plans + price breakdown */
@@ -671,3 +671,18 @@ a.how-step p { color: #bdbdbb; }
 .reserve-done { text-align: center; padding: 8px 0 4px; }
 .reserve-done h4 { font-family: var(--serif); font-weight: 400; font-size: 24px; margin: 0 0 8px; }
 .reserve-done p { font-size: 14px; color: var(--ink-2); margin-bottom: 10px; }
+
+/* Segmented dose picker */
+.dose-pick { display: grid; gap: 4px; }
+.seg { display: inline-flex; width: max-content; max-width: 100%; padding: 3px; gap: 2px; border-radius: 999px; background: var(--surface-2); }
+.seg-btn { position: relative; padding: 5px 12px; border-radius: 999px; font-size: 12.5px; font-weight: 500; color: var(--ink-2); white-space: nowrap; transition: background .15s, color .15s; }
+.seg-btn:hover { color: var(--ink); }
+.seg-btn.on { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.seg-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+.rec-dot { display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: var(--ink); margin-left: 5px; vertical-align: 2px; opacity: .55; }
+.seg-btn.on .rec-dot { opacity: 1; }
+.dose-detail { font-size: 11.5px; color: var(--muted); }
+.dose .dose-pick { flex: 1 1 auto; }
+.dose { align-items: flex-start; }
+.dose-label { padding-top: 7px; }
+.bundle-items .dose-pick { grid-area: dose; margin-top: 2px; }
