@@ -301,6 +301,7 @@
   }
 
   function addToCart(type, id, { sub = true, qty = 1, silent = false, items, doses, plan } = {}) {
+    reserveView = null;
     if (type === "bundle") cart = cart.filter(l => l.type !== "bundle"); // one personal bundle at a time
     plan = plan || (sub ? "monthly" : "once");
     const existing = type !== "bundle" && cart.find(l => l.type === type && l.id === id && planOf(l) === plan);
@@ -322,6 +323,23 @@
     toast(`${P[id].name} added to your bundle`);
   }
 
+  let reserveView = null, reserveName = "";   // null | "form" | "done"
+
+  // Netlify Forms: POST url-encoded to the site root. The matching hidden forms live in index.html.
+  function postForm(name, fields) {
+    const body = new URLSearchParams({ "form-name": name, "bot-field": "", ...fields }).toString();
+    return fetch("/", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body })
+      .then(r => { if (!r.ok) throw new Error(String(r.status)); });
+  }
+  function orderSummary() {
+    return cart.map(l => {
+      const plan = PLAN[planOf(l)].name;
+      if (l.type === "product") return `${P[l.id].name} x${l.qty} (${plan})`;
+      const items = l.items.map(i => `${P[i].name} ${DOSES[i].levels[doseIdx(i, (l.doses || {})[i])][0]}`).join(", ");
+      return `Bundle x${l.qty} (${plan}): ${items}`;
+    }).join(" | ");
+  }
+
   function renderCart() {
     const count = cart.reduce((n, l) => n + l.qty, 0);
     $("#cartCount").textContent = count;
@@ -332,8 +350,15 @@
     $("#shipMeter").innerHTML = `<strong>Free shipping</strong> on every order, always.`;
 
     const body = $("#cartItems");
+    if (!cart.length && reserveView !== "done") reserveView = null;
     if (!cart.length) {
-      body.innerHTML = `<div class="empty"><h4>Your cart is empty</h4><p>Not sure where to start? The 10-question survey builds your bundle for you.</p><a href="#quiz" class="btn btn-primary btn-sm" data-close>Take the survey</a></div>`;
+      if (reserveView === "done") {
+        body.innerHTML = `<div class="reserve-done"><h4>You're on the list${reserveName ? `, ${esc(reserveName)}` : ""}.</h4>
+          <p>Your order is reserved at today's price. We'll email you before anything ships, and you won't be charged until you confirm.</p>
+          <a href="#quiz" class="reserve-back" data-close>Back to the site</a></div>`;
+      } else {
+        body.innerHTML = `<div class="empty"><h4>Your cart is empty</h4><p>Not sure where to start? The 10-question survey builds your bundle for you.</p><a href="#quiz" class="btn btn-primary btn-sm" data-close>Take the survey</a></div>`;
+      }
       $("#cartFoot").innerHTML = "";
       return;
     }
@@ -375,13 +400,33 @@
       </div>`;
     }).join("");
 
-    $("#cartFoot").innerHTML = `
+    const summary = `
       <div class="sum-row"><span>Full price</span><span>${money2(full)}</span></div>
       ${full > now ? `<div class="sum-row save"><span>Subscription &amp; prepay savings</span><span>−${money2(full - now)}</span></div>` : ""}
       <div class="sum-row"><span>Shipping</span><span>Free</span></div>
-      <div class="sum-row total"><span>Due today</span><span>${money2(now)}</span></div>
-      <button class="btn btn-primary btn-block" id="checkoutBtn">Checkout</button>
-      <p class="fine">${anySub ? "Subscriptions renew automatically. Skip, pause or cancel any time. Your free pill organizer ships with your 2nd delivery." : "30-day money-back guarantee on your first order."}</p>`;
+      <div class="sum-row total"><span>Your price at launch</span><span>${money2(now)}</span></div>`;
+    if (reserveView === "done") {
+      $("#cartFoot").innerHTML = `<div class="reserve-done"><h4>You're on the list${reserveName ? `, ${esc(reserveName)}` : ""}.</h4>
+        <p>Your order is reserved at the price above. We'll email you before anything ships, and you won't be charged until you confirm.</p>
+        <button class="reserve-back" data-reserve-back>Back to cart</button></div>`;
+      return;
+    }
+    if (reserveView === "form") {
+      $("#cartFoot").innerHTML = `${summary}
+        <form id="reserveForm" class="reserve" novalidate>
+          <p class="reserve-lead"><strong>No payment today.</strong> Tropos is launching soon. Reserve this order at today's price and we'll email you before anything ships.</p>
+          <label>First name<input name="name" autocomplete="given-name" maxlength="40" value="${esc(firstName())}"></label>
+          <label>Email<input name="email" type="email" required autocomplete="email" maxlength="120" placeholder="you@example.com"></label>
+          <p class="reserve-error" aria-live="polite"></p>
+          <button class="btn btn-primary btn-block" type="submit">Reserve my order</button>
+          <button type="button" class="reserve-back" data-reserve-back>← Back to cart</button>
+          <p class="fine">We only use your email for Tropos launch updates. Unsubscribe any time.</p>
+        </form>`;
+      return;
+    }
+    $("#cartFoot").innerHTML = `${summary}
+      <button class="btn btn-primary btn-block" id="checkoutBtn">Reserve my order</button>
+      <p class="fine">Launching soon: reserve now, pay nothing today. ${anySub ? "Subscribers get a free pill organizer with their 2nd delivery." : ""}</p>`;
   }
 
   $("#cartItems").addEventListener("click", e => {
@@ -422,8 +467,26 @@
     if (line) { line.freq = +e.target.value; save(); }
   });
   $("#cartFoot").addEventListener("click", e => {
-    if (e.target.id !== "checkoutBtn") return;
-    toast("Demo store: checkout isn't connected yet.");
+    if (e.target.id === "checkoutBtn") { reserveView = "form"; renderCart(); const em = $("#reserveForm [name=email]"); if (em) em.focus(); return; }
+    if (e.target.closest("[data-reserve-back]")) { reserveView = null; renderCart(); }
+  });
+  $("#cartFoot").addEventListener("input", e => {
+    const err = e.target.form && $(".reserve-error", e.target.form);
+    if (err) err.textContent = "";
+  });
+  $("#cartFoot").addEventListener("submit", e => {
+    if (e.target.id !== "reserveForm") return;
+    e.preventDefault();
+    const f = e.target, err = $(".reserve-error", f), btn = $("button[type=submit]", f);
+    const name = $("[name=name]", f).value.trim(), email = $("[name=email]", f).value.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { err.textContent = "Please enter a valid email address."; $("[name=email]", f).focus(); return; }
+    let total = 0; cart.forEach(l => { total += linePricing(l).now; });
+    const a = lastAnswers || {};
+    const survey = lastAnswers ? JSON.stringify({ goals: a.goals, age: a.age, training: a.training, activity: a.activity, diet: a.diet }) : "";
+    btn.disabled = true; btn.textContent = "Reserving…"; err.textContent = "";
+    postForm("waitlist", { name, email, order: orderSummary(), price_at_launch: money2(total), survey })
+      .then(() => { reserveName = name; reserveView = "done"; cart = []; save(); renderCart(); })
+      .catch(() => { btn.disabled = false; btn.textContent = "Reserve my order"; err.textContent = "That didn't go through. Check your connection and try again."; });
   });
 
   /* Drawer open/close */
@@ -1032,8 +1095,11 @@
 
   $("#newsForm").addEventListener("submit", e => {
     e.preventDefault();
-    e.target.reset();
-    toast("You're on the list. Thanks!");
+    const f = e.target, email = $("[name=email]", f).value.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast("Please enter a valid email address."); return; }
+    postForm("newsletter", { email })
+      .then(() => { f.reset(); toast("You're on the list. Thanks!"); })
+      .catch(() => toast("That didn't go through. Please try again."));
   });
 
   renderShop();

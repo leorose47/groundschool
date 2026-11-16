@@ -13,3 +13,18 @@ cd supplements && python3 -m http.server 8000
 Product data (doses, prices, label facts) lives at the top of `app.js` in `PRODUCTS` and `STACKS`.
 Product images are in `img/` (3D studio renders, see `tools/render/`). Replace them with real photos at the same filenames.
 Checkout is a placeholder. Hook `#checkoutBtn` up to Shopify, Stripe or similar.
+
+## Launching on Netlify (waitlist mode)
+
+Checkout is a **waitlist**: "Reserve my order" collects first name, email, the cart (products, doses, plan) and
+the price at launch. No payment is taken. Reservations and newsletter sign-ups are stored by
+[Netlify Forms](https://docs.netlify.com/forms/setup/) via the hidden `waitlist` and `newsletter` forms in `index.html`.
+
+1. Push this branch (or merge it into your main branch).
+2. In Netlify: **Add new site → Import an existing project → GitHub**, pick this repo and branch.
+   `netlify.toml` at the repo root already sets the publish folder to `supplements`; there is no build command.
+3. Deploy. In the site's **Forms** tab, enable form detection if asked, then redeploy once so Netlify registers the forms.
+4. Submit a test reservation on the live URL and check it appears under **Forms → waitlist**.
+5. Optional: **Forms → Form notifications** to get an email for every reservation, and **Domain management** to add your own domain.
+
+Netlify's free plan includes 100 form submissions a month.
